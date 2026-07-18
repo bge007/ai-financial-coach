@@ -3,7 +3,8 @@ Follow all conventions and principles in CLAUDE.md.
 
 TASKS:
 1. `backend/app/core/config.py` — pydantic-settings loading `.env` (DB URL,
-   Qdrant URL, Google OAuth creds, Anthropic key, SECRET_KEY, ENVIRONMENT).
+   Qdrant URL, Google OAuth creds, OpenRouter key/base URL/model, SECRET_KEY,
+   ENVIRONMENT).
 2. `backend/app/core/db.py` — async SQLAlchemy engine + session dependency;
    alembic setup with an initial migration.
 3. `backend/app/models/user.py` — User table (id, google_sub, email, name,

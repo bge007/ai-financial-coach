@@ -17,7 +17,8 @@ orchestration, Qdrant RAG, FastAPI backend, React frontend.
 - Auth: Google OAuth via authlib, multi-user, JWT session cookie
 - Frontend: React (Vite), Recharts
 - Quant: pandas, numpy, scipy, PyPortfolioOpt
-- LLM: Anthropic API (claude-sonnet), structured JSON outputs validated by Pydantic
+- LLM: OpenRouter API (OpenAI-compatible; model set via `LLM_MODEL`, default
+  `anthropic/claude-sonnet-4.5`), structured JSON outputs validated by Pydantic
 
 ## Non-negotiable principles
 

@@ -6,7 +6,7 @@ aiosqlite
 langgraph
 langchain-core
 qdrant-client
-anthropic
+openai
 pandas
 numpy
 scipy
