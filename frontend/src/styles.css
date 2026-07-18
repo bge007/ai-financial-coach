@@ -169,6 +169,150 @@ body {
   color: var(--muted);
 }
 
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.page-header h1 {
+  font-size: 1.55rem;
+  margin-bottom: 0.35rem;
+}
+
+.page-header p {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.data-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(320px, 1.1fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.upload-zone,
+.profile-card,
+.summary-band {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.upload-zone {
+  min-height: 260px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.upload-zone input {
+  display: none;
+}
+
+.upload-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.upload-copy {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.primary-btn {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  border-radius: 6px;
+  padding: 0.6rem 0.95rem;
+  cursor: pointer;
+  font-weight: 650;
+  font-size: 0.92rem;
+}
+
+.primary-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.error-text {
+  color: #b42318;
+  font-size: 0.88rem;
+}
+
+.profile-card {
+  padding: 1.25rem;
+}
+
+.card-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.card-heading h2 {
+  font-size: 1.05rem;
+}
+
+.card-heading span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.metric {
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+  min-width: 0;
+}
+
+.metric span,
+.summary-band span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-bottom: 0.25rem;
+}
+
+.metric strong {
+  display: block;
+  font-size: 1.25rem;
+  overflow-wrap: anywhere;
+}
+
+.summary-band {
+  margin-top: 1rem;
+  padding: 1rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.summary-band strong {
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.duplicate-note {
+  color: var(--accent);
+  font-weight: 700;
+  align-self: center;
+}
+
 @media (max-width: 720px) {
   .shell {
     flex-direction: column;
@@ -178,5 +322,12 @@ body {
     flex-direction: column;
     border-right: none;
     border-bottom: 1px solid var(--border);
+  }
+  .data-grid,
+  .summary-band {
+    grid-template-columns: 1fr;
+  }
+  .metric-grid {
+    grid-template-columns: 1fr;
   }
 }

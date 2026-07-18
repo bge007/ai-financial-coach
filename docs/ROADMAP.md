@@ -6,7 +6,7 @@ under `.claude/commands/`) is fully met and verified.
 
 - [x] **Phase 0 — Foundation & Auth** — FastAPI + React, LangGraph, Qdrant,
       Google OAuth multi-user, INR/India config
-- [ ] **Phase 1 — Data & Profile** — CSV/PDF upload → parsed per-user
+- [x] **Phase 1 — Data & Profile** — CSV/PDF upload → parsed per-user
       financial profile
 - [ ] **Phase 2 — Transactions** — auto-categorisation (rent, SIP, groceries,
       EMI, travel); rules first, LLM fallback

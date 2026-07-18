@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import Login from "./pages/Login.jsx";
 import Shell from "./components/Shell.jsx";
+import DataProfile from "./pages/DataProfile.jsx";
 import Stub from "./pages/Stub.jsx";
 
 export const NAV_ITEMS = [
@@ -43,7 +44,13 @@ export default function App() {
           <Route
             key={item.path}
             path={item.path}
-            element={<Stub label={item.label} phase={item.phase} />}
+            element={
+              item.path === "/data" ? (
+                <DataProfile />
+              ) : (
+                <Stub label={item.label} phase={item.phase} />
+              )
+            }
           />
         ))}
         <Route path="*" element={<Navigate to="/" replace />} />
