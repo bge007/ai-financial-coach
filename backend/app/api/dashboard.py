@@ -36,9 +36,12 @@ async def dashboard(
     mom = await tools.month_over_month(db, user.id, 6)
     actions: list[str] = []
     budget = None
-    if profile and mom:
-        latest = mom[-1]["month"]
-        spend = await tools.spend_by_category(db, user.id, latest)
+    spend_label = None
+    if profile:
+        spend_label, spend = await tools.spend_by_category_recent(db, user.id, 3)
+        if not spend:
+            spend = {"other": profile["monthly_expenses"]}
+            spend_label = "profile expenses"
         budget = fifty_thirty_twenty(profile["monthly_income"], spend)
         # Only lifestyle overshoots warrant "reduce spend". Savings above 20%
         # is usually fine (surplus / SIPs), not something to cut.
@@ -90,6 +93,7 @@ async def dashboard(
             {
                 "actual": {k: _dec(v) for k, v in budget["actual"].items()},
                 "target": {k: _dec(v) for k, v in budget["target"].items()},
+                "window": spend_label,
             }
             if budget
             else None

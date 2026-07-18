@@ -1,4 +1,4 @@
-# AI Financial Coach — Master Prompt & Project Specification
+# MoneyMitra — Master Prompt & Project Specification
 
 > Single-document, self-contained specification of the entire project. Give this
 > to any capable engineer or coding agent and they should be able to (re)build

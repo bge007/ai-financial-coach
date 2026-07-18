@@ -19,6 +19,29 @@ def test_sample_pdf_parses():
     assert any("EMI" in t.description.upper() for t in txns)
 
 
+def test_icici_dot_date_multiline_parse():
+    from app.ingestion.pdf_parser import _parse_icici_multiline
+
+    text = (
+        "Airtel Pos\n"
+        "1 01.04.2025 529.82 24160.85\n"
+        "BIL/BPAY/Airtel\n"
+        "UPI pay\n"
+        "2 01.04.2025 151.00 24009.85\n"
+        "UPI/payment\n"
+        "Credit trxn\n"
+        "3 01.04.2025 150189.00 174198.85\n"
+        "FD clos\n"
+    )
+    txns = _parse_icici_multiline(text)
+    assert len(txns) == 3
+    assert txns[0].direction == Direction.debit
+    assert txns[0].amount == Decimal("529.82")
+    assert txns[2].direction == Direction.credit
+    assert txns[2].amount == Decimal("150189.00")
+
+
+
 def test_unparseable_pdf_raises():
     # Valid-enough PDF wrapper with no transaction-shaped text.
     junk = (

@@ -1,4 +1,4 @@
-Implement Phase 3 — Qdrant RAG + Tabular Tools — for the AI Financial Coach
+Implement Phase 3 — Qdrant RAG + Tabular Tools — for MoneyMitra
 project. Follow all conventions and principles in CLAUDE.md. Assumes Phases
 1-2 are complete (transactions exist and are categorized).
 

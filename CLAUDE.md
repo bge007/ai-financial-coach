@@ -1,4 +1,4 @@
-# AI Financial Coach — Claude Code Project Memory
+# MoneyMitra — Claude Code Project Memory
 
 This file is read automatically at the start of every Claude Code session in this
 repo. It is the single source of truth for stack, principles, and conventions.

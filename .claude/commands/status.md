@@ -1,4 +1,4 @@
-Give me a status report on the AI Financial Coach project:
+Give me a status report on the MoneyMitra project:
 
 1. Read `docs/ROADMAP.md` and report which phases are checked off.
 2. Run `pytest backend/tests -q` and summarize pass/fail counts.

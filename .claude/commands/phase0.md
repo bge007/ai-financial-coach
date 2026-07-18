@@ -1,4 +1,4 @@
-Implement Phase 0 — Foundation & Auth — for the AI Financial Coach project.
+Implement Phase 0 — Foundation & Auth — for the MoneyMitra project.
 Follow all conventions and principles in CLAUDE.md.
 
 TASKS:

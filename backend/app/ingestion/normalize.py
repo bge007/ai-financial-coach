@@ -10,8 +10,10 @@ from decimal import Decimal, InvalidOperation
 _DATE_FORMATS = (
     "%d/%m/%Y",
     "%d-%m-%Y",
+    "%d.%m.%Y",
     "%d/%m/%y",
     "%d-%m-%y",
+    "%d.%m.%y",
     "%Y-%m-%d",
     "%d %b %Y",
     "%d-%b-%Y",

@@ -35,6 +35,7 @@ export default function Dashboard() {
   return (
     <div className="data-page">
       <header className="page-header">
+        <p className="page-kicker">MoneyMitra</p>
         <h2>Dashboard</h2>
         <p className="page-sub">Income, expenses, surplus and a prioritised action plan.</p>
       </header>

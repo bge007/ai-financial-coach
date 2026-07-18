@@ -1,4 +1,4 @@
-Implement Phase 8 — Deploy & Monitor — for the AI Financial Coach project.
+Implement Phase 8 — Deploy & Monitor — for the MoneyMitra project.
 Follow all conventions and principles in CLAUDE.md. Assumes Phase 7 is
 complete (hardened, tested, secure).
 

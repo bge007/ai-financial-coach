@@ -1,4 +1,4 @@
-Implement Phase 1 — Data & Profile (ingestion) — for the AI Financial Coach
+Implement Phase 1 — Data & Profile (ingestion) — for MoneyMitra
 project. Follow all conventions and principles in CLAUDE.md. Assumes Phase 0
 is complete (auth + get_current_user dependency exist).
 

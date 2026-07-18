@@ -14,6 +14,7 @@ from app.models.financial_profile import FinancialProfile
 from app.models.transaction import Transaction
 from app.models.uploaded_file import UploadedFile
 from app.models.user import User
+from app.models.user_profile import UserProfile
 
 router = APIRouter(prefix="/api", tags=["privacy"])
 
@@ -27,6 +28,7 @@ async def delete_my_data(
     await db.execute(delete(Transaction).where(Transaction.user_id == user.id))
     await db.execute(delete(UploadedFile).where(UploadedFile.user_id == user.id))
     await db.execute(delete(FinancialProfile).where(FinancialProfile.user_id == user.id))
+    await db.execute(delete(UserProfile).where(UserProfile.user_id == user.id))
     await db.execute(delete(CategoryRule).where(CategoryRule.user_id == user.id))
     await db.commit()
 

@@ -19,32 +19,40 @@ def _money(v: float | Decimal) -> Decimal:
 
 
 def load_returns_csv(path: str | Path) -> pd.DataFrame:
-    """Load wide CSV of asset returns (columns = tickers, rows = periods)."""
+    """Load wide CSV of monthly asset returns and convert to price levels.
+
+    PyPortfolioOpt's mean_historical_return / sample_cov expect prices.
+    """
     df = pd.read_csv(path)
-    # Drop non-numeric date column if present.
     for col in list(df.columns):
         if col.lower() in {"date", "month", "period"}:
             df = df.drop(columns=[col])
-    return df.apply(pd.to_numeric, errors="coerce").dropna(how="all")
+    returns = df.apply(pd.to_numeric, errors="coerce").dropna(how="all")
+    # Convert simple returns → synthetic price index starting at 100.
+    prices = (1 + returns).cumprod() * 100.0
+    return prices.dropna(how="any")
 
 
 def optimize_portfolio(
-    returns: pd.DataFrame,
+    prices: pd.DataFrame,
     risk_free_rate: float = 0.05,
 ) -> dict[str, Any]:
-    """Max-Sharpe and min-volatility portfolios + frontier sample + Sharpe."""
+    """Max-Sharpe and min-volatility portfolios + frontier sample + Sharpe.
+
+    `prices` must be a DataFrame of asset price levels (not raw returns).
+    """
     from pypfopt import EfficientFrontier, expected_returns, risk_models
 
-    mu = expected_returns.mean_historical_return(returns, frequency=12)
-    cov = risk_models.sample_cov(returns, frequency=12)
+    mu = expected_returns.mean_historical_return(prices, frequency=12)
+    cov = risk_models.sample_cov(prices, frequency=12)
 
     ef_sharpe = EfficientFrontier(mu, cov)
-    weights_sharpe = ef_sharpe.max_sharpe(risk_free_rate=risk_free_rate)
+    ef_sharpe.max_sharpe(risk_free_rate=risk_free_rate)
     clean_sharpe = ef_sharpe.clean_weights()
     ret_s, vol_s, sharpe_s = ef_sharpe.portfolio_performance(risk_free_rate=risk_free_rate)
 
     ef_min = EfficientFrontier(mu, cov)
-    weights_min = ef_min.min_volatility()
+    ef_min.min_volatility()
     clean_min = ef_min.clean_weights()
     ret_m, vol_m, sharpe_m = ef_min.portfolio_performance(risk_free_rate=risk_free_rate)
 

@@ -2,10 +2,18 @@ export default function Login() {
   return (
     <div className="center-screen">
       <div className="login-card">
-        <h1>AI Financial Coach 🇮🇳</h1>
+        <img
+          className="login-logo"
+          src="/moneymitra-logo.png"
+          alt="MoneyMitra logo"
+        />
+        <h1>
+          Money<span className="mitra">Mitra</span>
+        </h1>
+        <div className="brand-tagline">Your trust, our guidance</div>
         <p className="tagline">
-          Multi-agent personal finance guidance — budgets, investments,
-          portfolio, tax &amp; retirement — grounded in your own statements.
+          Professional multi-agent finance guidance for India — budgets,
+          investments, tax &amp; retirement, grounded in your own statements.
         </p>
         <a className="google-btn" href="/auth/login">
           <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">

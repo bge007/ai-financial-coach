@@ -54,7 +54,7 @@ async def test_llm_repair_then_safe_failure():
 
     out = await call_agent_llm("sys", "user", llm=bad_llm)
     assert calls["n"] == 2  # original + one repair
-    assert "reliable" in out.summary.lower() or "try again" in out.summary.lower()
+    assert "grounded summary" in out.summary.lower() or "retry" in out.summary.lower()
 
 
 @pytest.mark.asyncio
@@ -73,6 +73,32 @@ async def test_llm_valid_json_no_repair():
 
     out = await call_agent_llm("sys", "user", llm=good_llm)
     assert calls["n"] == 1
+    assert out.figures_used == ["10000.00"]
+
+
+@pytest.mark.asyncio
+async def test_llm_connection_error_degrades_gracefully():
+    async def raising_llm(system, user):
+        raise ConnectionError("openrouter unreachable")
+
+    # Must not raise; falls back to a safe grounded summary.
+    out = await call_agent_llm("sys", "user", llm=raising_llm)
+    assert "grounded summary" in out.summary.lower() or "retry" in out.summary.lower()
+    assert out.figures_used == []
+
+
+@pytest.mark.asyncio
+async def test_llm_accepts_markdown_fenced_json():
+    async def fenced_llm(system, user):
+        return (
+            "```json\n"
+            '{"summary":"Allocate surplus to SIPs.","recommendations":["Keep SIPs"],'
+            '"figures_used":["10000.00"]}\n'
+            "```"
+        )
+
+    out = await call_agent_llm("sys", "user", llm=fenced_llm)
+    assert out.summary == "Allocate surplus to SIPs."
     assert out.figures_used == ["10000.00"]
 
 

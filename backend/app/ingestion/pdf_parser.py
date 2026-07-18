@@ -1,4 +1,10 @@
-"""PDF statement parser: table extraction first, line-regex fallback."""
+"""PDF statement parser: table extraction first, line-regex fallback.
+
+Handles ICICI-style text layouts where each txn spans multiple lines:
+  Short label
+  <SNo> <DD.MM.YYYY> <amount> <balance>
+  Long remarks...
+"""
 
 from __future__ import annotations
 
@@ -15,11 +21,19 @@ from app.models.schemas import ParsedTransaction
 
 # Date + description + optional debit/credit amounts on one line.
 _LINE_RE = re.compile(
-    r"(?P<date>\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\s+"
+    r"(?P<date>\d{1,2}[./\-]\d{1,2}[./\-]\d{2,4})\s+"
     r"(?P<desc>.+?)\s+"
     r"(?P<a1>₹?[\d,]+\.\d{2})\s*"
     r"(?P<a2>₹?[\d,]+\.\d{2})?",
     re.IGNORECASE,
+)
+
+# ICICI: "12 01.04.2025 529.82 24160.85"
+_ICICI_ROW_RE = re.compile(
+    r"^(?P<sno>\d+)\s+"
+    r"(?P<date>\d{1,2}\.\d{1,2}\.\d{2,4})\s+"
+    r"(?P<amount>[\d,]+\.\d{2})\s+"
+    r"(?P<balance>[\d,]+\.\d{2})\s*$"
 )
 
 
@@ -96,6 +110,101 @@ def _parse_tables(pdf: pdfplumber.PDF) -> list[ParsedTransaction]:
     return transactions
 
 
+def _parse_icici_multiline(text: str) -> list[ParsedTransaction]:
+    """Parse ICICI saving-account text layout using amount + running balance."""
+    lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
+    rows: list[dict] = []
+    i = 0
+    while i < len(lines):
+        m = _ICICI_ROW_RE.match(lines[i])
+        if not m:
+            i += 1
+            continue
+        # Prefer short label on previous line; fall back to following remarks.
+        prev = lines[i - 1] if i > 0 and not _ICICI_ROW_RE.match(lines[i - 1]) else ""
+        remarks: list[str] = []
+        j = i + 1
+        while j < len(lines) and not _ICICI_ROW_RE.match(lines[j]):
+            # Stop at page chrome / headers.
+            low = lines[j].lower()
+            if low.startswith("statement of transactions") or low.startswith(
+                "transaction withdrawal"
+            ):
+                break
+            if re.fullmatch(r"\d+", lines[j]):  # page number
+                j += 1
+                continue
+            remarks.append(lines[j])
+            j += 1
+            if len(remarks) >= 4:
+                break
+        desc_parts = [p for p in [prev, " ".join(remarks)] if p]
+        desc = " | ".join(desc_parts)[:400] or "ICICI transaction"
+        rows.append(
+            {
+                "date": m.group("date"),
+                "amount": parse_amount(m.group("amount")),
+                "balance": parse_amount(m.group("balance")),
+                "description": desc,
+                "sno": int(m.group("sno")),
+            }
+        )
+        i = j if j > i + 1 else i + 1
+
+    if len(rows) < 2:
+        return []
+
+    # Infer direction from running balance deltas.
+    transactions: list[ParsedTransaction] = []
+    prev_bal: Decimal | None = None
+    for row in rows:
+        amount = row["amount"]
+        bal = row["balance"]
+        txn_date = parse_indian_date(row["date"])
+        if amount is None or bal is None or txn_date is None:
+            continue
+        direction = Direction.debit
+        if prev_bal is not None:
+            # Credit if balance rose by ~amount; debit if it fell.
+            delta = bal - prev_bal
+            if abs(delta - amount) <= Decimal("0.05"):
+                direction = Direction.credit
+            elif abs(delta + amount) <= Decimal("0.05"):
+                direction = Direction.debit
+            else:
+                # Ambiguous (fees/rounding) — prefer sign of delta.
+                direction = Direction.credit if delta > 0 else Direction.debit
+        else:
+            # First row: keyword heuristic.
+            up = row["description"].upper()
+            if any(
+                k in up
+                for k in (
+                    "SALARY",
+                    "CREDIT",
+                    "INTEREST",
+                    "REFUND",
+                    "FD CLOS",
+                    "NEFT-",
+                    "IMPS",
+                    "UPI/",
+                )
+            ) and any(k in up for k in ("SALARY", "CREDIT", "INTEREST", "REFUND", "FD CLOS")):
+                direction = Direction.credit
+            else:
+                direction = Direction.debit
+        transactions.append(
+            ParsedTransaction(
+                date=txn_date,
+                description=row["description"],
+                amount=amount,
+                direction=direction,
+            )
+        )
+        prev_bal = bal
+    return transactions
+
+
 def _parse_lines(text: str) -> tuple[list[ParsedTransaction], int]:
     transactions: list[ParsedTransaction] = []
     skipped = 0
@@ -106,16 +215,13 @@ def _parse_lines(text: str) -> tuple[list[ParsedTransaction], int]:
         m = _LINE_RE.search(line)
         if not m:
             # Count only lines that look like they might be txn rows.
-            if re.match(r"\d{1,2}[/-]\d{1,2}[/-]\d{2,4}", line):
+            if re.match(r"\d{1,2}[./\-]\d{1,2}[./\-]\d{2,4}", line):
                 skipped += 1
             continue
         a1 = parse_amount(m.group("a1"))
         a2 = parse_amount(m.group("a2")) if m.group("a2") else None
         desc = m.group("desc").strip()
         desc_upper = desc.upper()
-        # Heuristic: salary/credit keywords → credit; else if two amounts,
-        # treat first as debit and second as credit (one should be empty in
-        # well-formed lines — when both present prefer credit keywords).
         if a2 and not a1:
             direction = Direction.credit
             amount = a2
@@ -126,9 +232,6 @@ def _parse_lines(text: str) -> tuple[list[ParsedTransaction], int]:
                 direction = Direction.debit
             amount = a1
         elif a1 and a2:
-            # Two amounts: non-zero "withdrawal" style — use the larger as the
-            # txn amount with keyword-based direction (balance often trails).
-            # Prefer credit keywords; otherwise debit.
             if any(k in desc_upper for k in ("SALARY", "CREDIT", "INTEREST", "REFUND")):
                 direction = Direction.credit
                 amount = a2 if a2 >= a1 else a1
@@ -166,7 +269,8 @@ def parse_pdf(content: bytes) -> tuple[list[ParsedTransaction], int]:
     try:
         with pdfplumber.open(io.BytesIO(content)) as pdf:
             table_txns = _parse_tables(pdf)
-            if table_txns:
+            # Only trust table extraction when we got real data rows (not header-only).
+            if len(table_txns) >= 3:
                 return table_txns, 0
 
             text_parts = [(page.extract_text() or "") for page in pdf.pages]
@@ -176,6 +280,10 @@ def parse_pdf(content: bytes) -> tuple[list[ParsedTransaction], int]:
 
     if not text.strip():
         raise ParseError("Unparseable PDF statement: no extractable text")
+
+    icici_txns = _parse_icici_multiline(text)
+    if icici_txns:
+        return icici_txns, 0
 
     transactions, skipped = _parse_lines(text)
     if not transactions:

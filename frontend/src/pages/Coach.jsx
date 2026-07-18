@@ -33,6 +33,7 @@ export default function Coach() {
   return (
     <div className="data-page">
       <header className="page-header">
+        <p className="page-kicker">MoneyMitra · Ask the Coach</p>
         <h2>Ask the Coach</h2>
         <p className="page-sub">Grounded answers with citations and an agent-route badge.</p>
       </header>

@@ -49,7 +49,7 @@ export default function App() {
   }, []);
 
   if (loading) {
-    return <div className="center-screen">Loading…</div>;
+    return <div className="center-screen loading-screen">MoneyMitra…</div>;
   }
 
   if (!user) {

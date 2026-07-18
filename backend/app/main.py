@@ -8,6 +8,7 @@ from app.api.ask import router as ask_router
 from app.api.auth import router as auth_router
 from app.api.dashboard import router as dashboard_router
 from app.api.privacy import router as privacy_router
+from app.api.profile import router as profile_router
 from app.api.transactions import router as transactions_router
 from app.api.upload import router as upload_router
 from app.core.config import get_settings
@@ -20,7 +21,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="AI Financial Coach", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="MoneyMitra", version="0.1.0", lifespan=lifespan)
 
 settings = get_settings()
 
@@ -38,6 +39,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(upload_router)
+app.include_router(profile_router)
 app.include_router(transactions_router)
 app.include_router(ask_router)
 app.include_router(dashboard_router)
@@ -54,6 +56,6 @@ async def metrics() -> dict:
     """Lightweight hackathon metrics endpoint (no Prometheus scrape required)."""
     return {
         "status": "ok",
-        "service": "ai-financial-coach",
+        "service": "moneymitra",
         "note": "Agent token/latency details are logged per /api/ask run",
     }

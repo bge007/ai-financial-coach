@@ -72,3 +72,25 @@ class RecategorizeIn(BaseModel):
 class RecategorizeOut(BaseModel):
     transaction: TransactionOut
     rule_id: int
+
+
+class UserProfileIn(BaseModel):
+    name: str = ""
+    age: int | None = Field(default=None, ge=18, le=100)
+    city: str = ""
+    monthly_income: Decimal | None = Field(default=None, ge=0)
+    emergency_fund: Decimal | None = Field(default=None, ge=0)
+    risk_profile: str = Field(default="moderate")
+
+
+class UserProfileOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    user_id: int
+    name: str
+    age: int | None
+    city: str
+    monthly_income: Decimal | None
+    emergency_fund: Decimal | None
+    risk_profile: str
+    updated_at: datetime

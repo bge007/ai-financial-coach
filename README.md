@@ -1,6 +1,6 @@
-# AI Financial Coach 🇮🇳
+# MoneyMitra 🇮🇳
 
-A full-stack, multi-agent financial advisor built for India — powered by **LangGraph** orchestration and **Qdrant** RAG.
+Your AI-powered financial companion for India — a full-stack, multi-agent advisor powered by **LangGraph** orchestration and **Qdrant** RAG.
 
 > ⚠️ **Disclaimer:** This project is for informational and educational purposes only. It is not SEBI-registered investment advice.
 

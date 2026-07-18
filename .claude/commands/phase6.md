@@ -1,4 +1,4 @@
-Implement Phase 6 — API & Live Dashboard — for the AI Financial Coach
+Implement Phase 6 — API & Live Dashboard — for MoneyMitra
 project. Follow all conventions and principles in CLAUDE.md. Assumes Phase 5
 is complete (agents + /api/ask + /api/agents/{name}/analyze exist).
 

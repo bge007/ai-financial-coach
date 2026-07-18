@@ -5,9 +5,11 @@ from app.models.financial_profile import FinancialProfile
 from app.models.transaction import Transaction
 from app.models.uploaded_file import UploadedFile
 from app.models.user import User
+from app.models.user_profile import UserProfile
 
 __all__ = [
     "User",
+    "UserProfile",
     "UploadedFile",
     "Transaction",
     "FinancialProfile",

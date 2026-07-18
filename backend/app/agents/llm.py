@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import json
+import logging
+import re
 from typing import Any, Callable, Awaitable
 
 from pydantic import BaseModel, Field, ValidationError
 
 from app.core.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 DISCLAIMER = "Informational only — not SEBI-registered investment advice."
 
@@ -19,6 +23,24 @@ class AgentOutput(BaseModel):
 
 
 LLMFn = Callable[[str, str], Awaitable[str]]
+
+
+def _parse_agent_json(raw: str) -> AgentOutput:
+    """Parse AgentOutput from raw LLM text, tolerating markdown fences."""
+    text = (raw or "").strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*", "", text, count=1, flags=re.IGNORECASE)
+        text = re.sub(r"\s*```$", "", text, count=1)
+        text = text.strip()
+    try:
+        return AgentOutput.model_validate(json.loads(text))
+    except (json.JSONDecodeError, ValidationError, TypeError):
+        # Last resort: extract the outermost JSON object.
+        start = text.find("{")
+        end = text.rfind("}")
+        if start >= 0 and end > start:
+            return AgentOutput.model_validate(json.loads(text[start : end + 1]))
+        raise
 
 
 async def default_openrouter_chat(system: str, user: str) -> str:
@@ -43,6 +65,7 @@ async def default_openrouter_chat(system: str, user: str) -> str:
     client = AsyncOpenAI(
         api_key=settings.openrouter_api_key,
         base_url=settings.openrouter_base_url,
+        timeout=60.0,
     )
     resp = await client.chat.completions.create(
         model=settings.llm_model,
@@ -56,6 +79,16 @@ async def default_openrouter_chat(system: str, user: str) -> str:
     return resp.choices[0].message.content or "{}"
 
 
+async def _safe_call(fn: LLMFn, system: str, user: str) -> str | None:
+    """Call the LLM; return None on transport/provider errors (never raise)."""
+    try:
+        return await fn(system, user)
+    except Exception as exc:
+        # Network/provider/auth failures degrade gracefully instead of 500.
+        logger.warning("LLM call failed: %s: %s", type(exc).__name__, exc)
+        return None
+
+
 async def call_agent_llm(
     system: str,
     user: str,
@@ -64,25 +97,29 @@ async def call_agent_llm(
 ) -> AgentOutput:
     """Validate AgentOutput JSON; exactly one repair attempt on failure."""
     fn = llm or default_openrouter_chat
-    raw = await fn(system, user)
-    try:
-        return AgentOutput.model_validate(json.loads(raw))
-    except (json.JSONDecodeError, ValidationError, TypeError):
-        repair_user = (
-            user
-            + "\n\nYour previous reply was invalid JSON. "
-            "Return ONLY JSON: "
-            '{"summary":"...","recommendations":["..."],"figures_used":["1234.00"]}'
-        )
-        raw2 = await fn(system, repair_user)
+    raw = await _safe_call(fn, system, user)
+    if raw is not None:
         try:
-            return AgentOutput.model_validate(json.loads(raw2))
-        except (json.JSONDecodeError, ValidationError, TypeError):
-            return AgentOutput(
-                summary=(
-                    "I could not produce a reliable structured answer just now. "
-                    "Please try again, or use the calculator pages for exact figures."
-                ),
-                recommendations=[],
-                figures_used=[],
+            return _parse_agent_json(raw)
+        except (json.JSONDecodeError, ValidationError, TypeError, ValueError):
+            repair_user = (
+                user
+                + "\n\nYour previous reply was invalid JSON. "
+                "Return ONLY JSON: "
+                '{"summary":"...","recommendations":["..."],"figures_used":["1234.00"]}'
             )
+            raw2 = await _safe_call(fn, system, repair_user)
+            if raw2 is not None:
+                try:
+                    return _parse_agent_json(raw2)
+                except (json.JSONDecodeError, ValidationError, TypeError, ValueError):
+                    pass
+    return AgentOutput(
+        summary=(
+            "I could not reach the language model just now, so here is a grounded "
+            "summary from your computed finance figures. Please retry for fuller "
+            "natural-language coaching."
+        ),
+        recommendations=[],
+        figures_used=[],
+    )

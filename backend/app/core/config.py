@@ -1,11 +1,24 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _env_files() -> tuple[str, ...]:
+    """Prefer repo-root .env (hackathon layout), then cwd .env."""
+    here = Path(__file__).resolve()
+    candidates = [
+        here.parents[3] / ".env",  # .../ai-financial-coach/.env
+        Path.cwd() / ".env",
+        Path.cwd().parent / ".env",
+    ]
+    found = [str(p) for p in candidates if p.is_file()]
+    return tuple(found) or (".env",)
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+        env_file=_env_files(), env_file_encoding="utf-8", extra="ignore"
     )
 
     # Database

@@ -97,6 +97,28 @@ async def spend_by_category(
     return {k: _money(v) for k, v in sorted(totals.items())}
 
 
+async def spend_by_category_recent(
+    db: AsyncSession, user_id: int, n_months: int = 3
+) -> tuple[str | None, dict[str, Decimal]]:
+    """Average monthly debit spend by category over the last n months with activity.
+
+    Returns (label, category→amount). Label is e.g. '2025-01..2025-03 avg'.
+    """
+    mom = await month_over_month(db, user_id, max(n_months, 6))
+    active = [m["month"] for m in mom if m["expenses"] and m["expenses"] > 0]
+    if not active:
+        return None, {}
+    window = active[-n_months:]
+    totals: dict[str, Decimal] = defaultdict(lambda: Decimal("0"))
+    for month in window:
+        for k, v in (await spend_by_category(db, user_id, month)).items():
+            totals[k] += v
+    n = Decimal(len(window))
+    averaged = {k: _money(v / n) for k, v in sorted(totals.items())}
+    label = window[0] if len(window) == 1 else f"{window[0]}..{window[-1]} avg"
+    return label, averaged
+
+
 async def month_over_month(
     db: AsyncSession, user_id: int, n_months: int = 6
 ) -> list[dict[str, Any]]:

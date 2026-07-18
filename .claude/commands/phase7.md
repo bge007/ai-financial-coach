@@ -1,4 +1,4 @@
-Implement Phase 7 — Eval, Security & Compliance — for the AI Financial Coach
+Implement Phase 7 — Eval, Security & Compliance — for MoneyMitra
 project. Follow all conventions and principles in CLAUDE.md. Assumes Phase 6
 is complete (full product demoable end to end).
 

@@ -16,7 +16,9 @@ from app.agents import tools
 from app.engines.budget import fifty_thirty_twenty
 from app.engines.debt import Debt, payoff_schedule
 from app.engines.investment import blended_expected_return, project_growth, risk_allocation
+from app.engines.portfolio import load_returns_csv, optimize_portfolio
 from app.engines.tax_india import compare_regimes, epf_projection, load_tax_config, nps_projection, sip_maturity
+from app.core.paths import config_path
 from app.rag.retriever import retrieve
 
 
@@ -52,17 +54,31 @@ async def _gather_context(
         {**m, "income": _dec(m["income"]), "expenses": _dec(m["expenses"]), "surplus": _dec(m["surplus"])}
         for m in mom
     ]
-    if mom:
-        latest = mom[-1]["month"]
-        spend = await tools.spend_by_category(db, user_id, latest)
-        ctx["spend_by_category"] = {k: _dec(v) for k, v in spend.items()}
-        if "budget_agent" in routes and ctx["profile"]:
-            budget = fifty_thirty_twenty(ctx["profile"]["monthly_income"], spend)
-            ctx["budget"] = {
-                "actual": {k: _dec(v) for k, v in budget["actual"].items()},
-                "target": {k: _dec(v) for k, v in budget["target"].items()},
-                "overshoot": budget["overshoot"],
-            }
+    spend_label, spend = await tools.spend_by_category_recent(db, user_id, 3)
+    ctx["spend_by_category"] = {k: _dec(v) for k, v in spend.items()}
+    ctx["spend_window"] = spend_label
+    if "budget_agent" in routes and ctx["profile"] and spend:
+        budget = fifty_thirty_twenty(ctx["profile"]["monthly_income"], spend)
+        ctx["budget"] = {
+            "actual": {k: _dec(v) for k, v in budget["actual"].items()},
+            "target": {k: _dec(v) for k, v in budget["target"].items()},
+            "overshoot": budget["overshoot"],
+            "undershoot": budget.get("undershoot") or [],
+            "window": spend_label,
+        }
+    elif "budget_agent" in routes and ctx["profile"]:
+        # Fall back to profile expenses as uncategorised wants so the page isn't empty.
+        budget = fifty_thirty_twenty(
+            ctx["profile"]["monthly_income"],
+            {"other": ctx["profile"]["monthly_expenses"]},
+        )
+        ctx["budget"] = {
+            "actual": {k: _dec(v) for k, v in budget["actual"].items()},
+            "target": {k: _dec(v) for k, v in budget["target"].items()},
+            "overshoot": budget["overshoot"],
+            "undershoot": budget.get("undershoot") or [],
+            "window": "profile expenses",
+        }
 
     if "investment_agent" in routes:
         age = int(params.get("age", 30))
@@ -126,6 +142,62 @@ async def _gather_context(
                 "snowball_payoff_date": sn["payoff_date"],
                 "extra_monthly": _dec(extra),
             }
+
+    if "portfolio_agent" in routes:
+        try:
+            returns_path = config_path("sample_asset_returns.csv")
+            prices = load_returns_csv(returns_path)
+            opt = optimize_portfolio(prices)
+            sip = Decimal(
+                str(
+                    params.get(
+                        "monthly_sip",
+                        ctx["profile"]["surplus"]
+                        if ctx.get("profile") and ctx["profile"].get("surplus") is not None
+                        else 10000,
+                    )
+                )
+            )
+            if sip <= 0:
+                sip = Decimal("10000")
+            corpus = project_growth(
+                sip,
+                15,
+                float(opt["max_sharpe"]["expected_return"]),
+            )
+            ctx["portfolio"] = {
+                "max_sharpe": {
+                    "weights": {
+                        k: f"{Decimal(str(v)):.4f}"
+                        for k, v in opt["max_sharpe"]["weights"].items()
+                    },
+                    "expected_return": f"{Decimal(str(opt['max_sharpe']['expected_return'])):.4f}",
+                    "volatility": f"{Decimal(str(opt['max_sharpe']['volatility'])):.4f}",
+                    "sharpe": f"{Decimal(str(opt['max_sharpe']['sharpe'])):.4f}",
+                },
+                "min_volatility": {
+                    "weights": {
+                        k: f"{Decimal(str(v)):.4f}"
+                        for k, v in opt["min_volatility"]["weights"].items()
+                    },
+                    "expected_return": f"{Decimal(str(opt['min_volatility']['expected_return'])):.4f}",
+                    "volatility": f"{Decimal(str(opt['min_volatility']['volatility'])):.4f}",
+                    "sharpe": f"{Decimal(str(opt['min_volatility']['sharpe'])):.4f}",
+                },
+                "frontier": [
+                    {
+                        "return": f"{Decimal(str(p['return'])):.4f}",
+                        "volatility": f"{Decimal(str(p['volatility'])):.4f}",
+                        "sharpe": f"{Decimal(str(p['sharpe'])):.4f}",
+                    }
+                    for p in opt.get("frontier") or []
+                ],
+                "monthly_sip": _dec(sip),
+                "corpus_15y": _dec(corpus),
+                "returns_source": "config/sample_asset_returns.csv",
+            }
+        except Exception as exc:
+            ctx["portfolio_error"] = str(exc)
 
     chunks = retrieve(user_id, query, k=6)
     rag = [
