@@ -56,24 +56,29 @@ def project_growth(
     monthly_amount: Decimal | float | int,
     years: int,
     expected_return: Decimal | float,
+    initial_corpus: Decimal | float | int = 0,
 ) -> Decimal:
-    """SIP future value with monthly compounding.
+    """SIP future value with monthly compounding, plus optional starting corpus.
 
-    FV = P * [((1+i)^n − 1) / i] * (1+i)
-    where i = annual_return/12, n = years*12, P = monthly_amount.
+    SIP FV = P * [((1+i)^n − 1) / i] * (1+i)
+    Lump FV = C * (1+i)^n
+    where i = annual_return/12, n = years*12, P = monthly_amount, C = initial.
     """
     p = Decimal(str(monthly_amount))
-    if p <= 0 or years <= 0:
-        return _money(0)
+    c = Decimal(str(initial_corpus or 0))
+    if years <= 0:
+        return _money(max(c, Decimal("0")))
     annual = Decimal(str(expected_return))
     i = annual / Decimal(12)
     n = years * 12
     if i == 0:
-        return _money(p * n)
-    # Use float pow for intermediate, then quantize.
+        return _money(c + (p * n if p > 0 else Decimal("0")))
     growth = (Decimal("1") + i) ** n
-    fv = p * ((growth - Decimal("1")) / i) * (Decimal("1") + i)
-    return _money(fv)
+    lump = c * growth
+    sip_fv = Decimal("0")
+    if p > 0:
+        sip_fv = p * ((growth - Decimal("1")) / i) * (Decimal("1") + i)
+    return _money(lump + sip_fv)
 
 
 def blended_expected_return(

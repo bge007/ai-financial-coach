@@ -116,6 +116,53 @@ def test_guardrail_flags_invented_number():
     assert "FY 2026-27" in guarded["summary"]
 
 
+def test_guardrail_accepts_integer_form_of_engine_amount():
+    """LLM often cites 40000 while engines store 40000.00."""
+    out = AgentOutput(
+        summary="Your SIP of ₹40000 can grow to ₹9058406.48 in 10 years from ₹100000.",
+        recommendations=["Keep SIP at 40000 if surplus allows."],
+        figures_used=["40000.00"],
+    )
+    guarded = apply_guardrail(
+        out,
+        financial_year="2026-27",
+        allowed_figures=["40000.00", "9058406.48", "100000.00", "10.00"],
+    )
+    assert guarded["guardrail_flagged"] is False
+    assert "[amount withheld]" not in guarded["summary"]
+    assert "40000" in guarded["summary"]
+    assert "9058406.48" in guarded["summary"]
+
+
+def test_guardrail_accepts_allocation_percent_from_fraction():
+    out = AgentOutput(
+        summary="Portfolio is 28% equity and 16% cash with SIP ₹15000.00.",
+        recommendations=[],
+        figures_used=["0.28", "0.16", "15000.00"],
+    )
+    guarded = apply_guardrail(
+        out,
+        financial_year="2026-27",
+        allowed_figures=["0.28", "0.16", "15000.00"],
+    )
+    # Bare 28 / 16 are not extracted as rupee figures; 15000.00 must pass.
+    assert "15000.00" in guarded["summary"]
+    assert "[amount withheld]" not in guarded["summary"] or guarded["guardrail_flagged"] is False
+
+
+def test_guardrail_does_not_substring_replace_percentages():
+    """Replacing invented '2' must not turn '28%' into '[amount withheld]8%'."""
+    out = AgentOutput(
+        summary="Mix is 28% equity. Do not invent ₹999999.",
+        recommendations=[],
+        figures_used=["0.28"],
+    )
+    guarded = apply_guardrail(out, financial_year="2026-27", allowed_figures=["0.28"])
+    assert "28%" in guarded["summary"]
+    assert "[amount withheld]8%" not in guarded["summary"]
+    assert "[amount withheld]" in guarded["summary"]  # 999999 stripped
+
+
 @pytest.mark.asyncio
 async def test_multi_topic_merges_agents(client):
     async def fake_llm(system, user):

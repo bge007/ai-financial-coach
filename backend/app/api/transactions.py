@@ -73,11 +73,29 @@ async def list_transactions(
         .limit(page_size)
     )
     rows = result.scalars().all()
+
+    # Distinct YYYY-MM values across ALL of this user's transactions (not just the page).
+    month_rows = await db.execute(
+        select(Transaction.date)
+        .where(Transaction.user_id == user.id)
+        .order_by(Transaction.date.desc())
+    )
+    available_months: list[str] = []
+    seen: set[str] = set()
+    for (txn_date,) in month_rows.all():
+        if txn_date is None:
+            continue
+        key = f"{txn_date.year:04d}-{txn_date.month:02d}"
+        if key not in seen:
+            seen.add(key)
+            available_months.append(key)
+
     return TransactionListOut(
         items=[TransactionOut.model_validate(r) for r in rows],
         total=int(total or 0),
         page=page,
         page_size=page_size,
+        available_months=available_months,
     )
 
 

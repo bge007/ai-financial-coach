@@ -66,6 +66,13 @@ def test_sip_fv_hand_math():
     assert fv == Decimal("128093.28")
 
 
+def test_project_growth_with_starting_corpus():
+    # Same SIP FV as above plus C*(1.01)^12
+    # 50000 * 1.12682503013 ≈ 56341.25 → + 128093.28 = 184434.53
+    fv = project_growth(10000, 1, 0.12, initial_corpus=50000)
+    assert fv == Decimal("184434.53")
+
+
 def test_risk_allocation_sums_to_one():
     alloc = risk_allocation(30, "moderate")
     total = alloc["equity"] + alloc["debt"] + alloc["cash"]

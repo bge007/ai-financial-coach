@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import Login from "./pages/Login.jsx";
 import Shell from "./components/Shell.jsx";
 import DataProfile from "./pages/DataProfile.jsx";
@@ -36,6 +36,29 @@ const PAGES = {
   coach: <Coach />,
 };
 
+function AuthenticatedApp({ user }) {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Fresh session from landing signup/login lands on Data & Profile.
+    if (sessionStorage.getItem("mm_post_auth") === "1") {
+      sessionStorage.removeItem("mm_post_auth");
+      navigate("/data", { replace: true });
+    }
+  }, [navigate]);
+
+  return (
+    <Routes>
+      <Route element={<Shell user={user} />}>
+        {NAV_ITEMS.map((item) => (
+          <Route key={item.path} path={item.path} element={PAGES[item.element]} />
+        ))}
+        <Route path="*" element={<Navigate to="/data" replace />} />
+      </Route>
+    </Routes>
+  );
+}
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -48,22 +71,18 @@ export default function App() {
       .finally(() => setLoading(false));
   }, []);
 
+  function handleAuthenticated(userBody) {
+    sessionStorage.setItem("mm_post_auth", "1");
+    setUser(userBody);
+  }
+
   if (loading) {
     return <div className="center-screen loading-screen">MoneyMitra…</div>;
   }
 
   if (!user) {
-    return <Login />;
+    return <Login onAuthenticated={handleAuthenticated} />;
   }
 
-  return (
-    <Routes>
-      <Route element={<Shell user={user} />}>
-        {NAV_ITEMS.map((item) => (
-          <Route key={item.path} path={item.path} element={PAGES[item.element]} />
-        ))}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Route>
-    </Routes>
-  );
+  return <AuthenticatedApp user={user} />;
 }

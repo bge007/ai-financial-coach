@@ -9,7 +9,7 @@ from typing import Any, TypedDict
 from langgraph.graph import END, StateGraph
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agents.guardrails import apply_guardrail
+from app.agents.guardrails import _canon_amount, _expand_allowed, _normalize_amount, apply_guardrail
 from app.agents.llm import AgentOutput, LLMFn, call_agent_llm
 from app.agents.router import route_query
 from app.agents import tools
@@ -84,35 +84,102 @@ async def _gather_context(
         age = int(params.get("age", 30))
         risk = str(params.get("risk_profile", "moderate"))
         alloc = risk_allocation(age, risk)
-        er = blended_expected_return(alloc)
+        blended = blended_expected_return(alloc)
+        if params.get("expected_return") is not None and params.get("expected_return") != "":
+            # UI may send percent (11) or fraction (0.11)
+            raw_er = Decimal(str(params.get("expected_return")))
+            er = raw_er / Decimal(100) if raw_er > 1 else raw_er
+        else:
+            er = blended
         default_sip = (
             ctx["profile"]["surplus"]
             if ctx.get("profile") and ctx["profile"].get("surplus") is not None
             else 10000
         )
         monthly = Decimal(str(params.get("monthly_sip", default_sip)))
-        growth = project_growth(monthly, int(params.get("years", 20)), er)
+        if monthly < 0:
+            monthly = Decimal("0")
+        starting = Decimal(str(params.get("starting_corpus", 0) or 0))
+        years = int(params.get("years", 20))
+        growth = project_growth(monthly, years, er, initial_corpus=starting)
         ctx["investment"] = {
             "allocation": {k: _dec(v) for k, v in alloc.items()},
             "expected_return": str(er),
+            "blended_return": str(blended),
             "projected_corpus": _dec(growth),
             "monthly_sip": _dec(monthly),
-            "years": int(params.get("years", 20)),
+            "starting_corpus": _dec(starting),
+            "years": years,
+            "age": age,
+            "risk_profile": risk,
         }
 
     if "tax_agent" in routes:
-        gross = Decimal(str(params.get("gross_income", ctx["profile"]["monthly_income"] * 12 if ctx["profile"] else 1000000)))
-        deductions = params.get("deductions") or {"80c": 150000, "80d": 25000}
+        profile = ctx.get("profile") or {}
+        default_gross = (
+            profile["monthly_income"] * 12
+            if profile.get("monthly_income") is not None
+            else 1000000
+        )
+        gross = Decimal(str(params.get("gross_income", default_gross)))
+        deductions = params.get("deductions")
+        if not deductions:
+            # Single "old-regime deductions" field from UI → 80C (engine caps to limit).
+            old_ded = params.get("old_regime_deductions")
+            if old_ded is not None and old_ded != "":
+                deductions = {"80c": Decimal(str(old_ded))}
+            else:
+                deductions = {"80c": 150000, "80d": 25000}
+        monthly_nps = Decimal(str(params.get("monthly_nps", 5000) or 0))
+        if monthly_nps > 0 and "80ccd_1b" not in deductions:
+            # Rough annual NPS eligible for 80CCD(1B); engine applies the YAML cap.
+            deductions = {**deductions, "80ccd_1b": monthly_nps * 12}
         cmp = compare_regimes(gross, deductions)
+
+        age = int(params.get("age", profile.get("age") or 30))
+        retire_age = int(params.get("retirement_age", 60))
+        years = max(1, retire_age - age)
+        monthly_epf = Decimal(str(params.get("monthly_epf", 0) or 0))
+        current_corpus = Decimal(str(params.get("current_corpus", 0) or 0))
+        monthly_expenses = Decimal(str(params.get("monthly_expenses", 0) or 0))
+
+        tax_cfg = load_tax_config()
+        epf_rate = Decimal(str(tax_cfg["epf"]["interest_rate"]))
+        # UI "Monthly EPF" is contribution (employee+employer), not basic salary base.
+        if monthly_epf > 0:
+            epf_corpus = project_growth(monthly_epf, years, epf_rate)
+            epf_monthly_used = monthly_epf
+        else:
+            epf = epf_projection(50000, years)
+            epf_corpus = epf["corpus"]
+            epf_monthly_used = epf["monthly_contribution"]
+        nps = nps_projection(monthly_nps if monthly_nps > 0 else 5000, years)
+        # Grow existing corpus at a conservative 8% with no new SIP.
+        grown_lump = project_growth(0, years, Decimal("0.08"), initial_corpus=current_corpus)
+        retirement_corpus = _dec(grown_lump + epf_corpus + nps["corpus"])
+        # Rough annual expense need at retirement (today's expenses, no inflation for now).
+        annual_need = _dec(monthly_expenses * 12) if monthly_expenses > 0 else None
+
         ctx["tax"] = {
             "financial_year": cmp["financial_year"],
             "better_regime": cmp["better_regime"],
             "old_total_tax": _dec(cmp["old"]["total_tax"]),
             "new_total_tax": _dec(cmp["new"]["total_tax"]),
             "savings_vs_other": _dec(cmp["savings_vs_other"]),
+            "gross_income": _dec(gross),
+            "age": age,
+            "retirement_age": retire_age,
+            "years_to_retire": years,
+            "monthly_expenses": _dec(monthly_expenses),
+            "current_corpus": _dec(current_corpus),
+            "monthly_epf": _dec(epf_monthly_used),
+            "monthly_nps": _dec(nps["monthly_contribution"]),
             "sip_10y": _dec(sip_maturity(10000, 10, 0.12)),
-            "epf_corpus": _dec(epf_projection(50000, 10)["corpus"]),
-            "nps_corpus": _dec(nps_projection(5000, 10)["corpus"]),
+            "epf_corpus": _dec(epf_corpus),
+            "nps_corpus": _dec(nps["corpus"]),
+            "retirement_corpus": retirement_corpus,
+            "annual_expense_need": annual_need,
+            "mode": str(params.get("mode") or "tax"),
         }
 
     if "debt_agent" in routes:
@@ -224,6 +291,12 @@ def _figures_from_ctx(ctx: dict[str, Any]) -> list[str]:
                 walk(v)
         elif isinstance(obj, Decimal):
             figs.append(f"{obj:.2f}")
+        elif isinstance(obj, bool):
+            return
+        elif isinstance(obj, int):
+            figs.append(f"{Decimal(obj):.2f}")
+        elif isinstance(obj, float):
+            figs.append(f"{Decimal(str(obj)):.2f}")
         elif isinstance(obj, str):
             try:
                 Decimal(obj)
@@ -232,10 +305,12 @@ def _figures_from_ctx(ctx: dict[str, Any]) -> list[str]:
                 pass
 
     walk(ctx)
-    # unique preserve order
+    # Expand fraction weights/returns into percent forms the LLM often cites.
+    expanded = list(_expand_allowed(figs))
+    # unique preserve order (raw engine figs first, then expansions)
     seen = set()
     out = []
-    for f in figs:
+    for f in figs + expanded:
         if f not in seen:
             seen.add(f)
             out.append(f)
@@ -259,12 +334,26 @@ async def run_agents(
     agent_outputs: dict[str, dict[str, Any]] = {}
     for agent in routes:
         system = (
-            f"You are the {agent} for an Indian personal finance coach. "
+            f"You are the {agent} for an Indian personal finance coach (MoneyMitra). "
             "Use ONLY the provided computed figures. Do not invent rupee amounts. "
             "Return JSON with keys summary, recommendations (array of strings), "
             "figures_used (array of numeric strings you cited from the context). "
-            "Never compute new numbers."
+            "Never compute new numbers. "
+            "Write in easy layman English for a normal salaried Indian user: short sentences, "
+            "no jargon, no dense paragraphs. Prefer plain words like needs, wants, savings, "
+            "EMI, SIP. Keep summary under 120 words."
         )
+        if agent == "budget_agent":
+            system += (
+                " For budget_agent: first explain the 50/30/20 idea in one short line, "
+                "then say what is high/low vs target in plain words, then end with one clear bottom line."
+            )
+        if agent == "investment_agent":
+            system += (
+                " For investment_agent: cite exact rupee amounts from Allowed figures "
+                "(e.g. 9058406.48), not round lakhs. When mentioning allocation, use the "
+                "percent integers from Allowed figures. Put every cited amount in figures_used."
+            )
         user_msg = (
             f"User question: {query}\n\n"
             f"Computed context JSON:\n{json.dumps(ctx, default=str)[:8000]}\n\n"
@@ -272,13 +361,21 @@ async def run_agents(
             f"Allowed figures_used candidates: {figures[:80]}"
         )
         out = await call_agent_llm(system, user_msg, llm=llm)
-        # Ensure figures_used ⊆ context figures when possible
-        if not out.figures_used:
-            out = AgentOutput(
-                summary=out.summary,
-                recommendations=out.recommendations,
-                figures_used=figures[:20],
-            )
+        # Prefer LLM figures_used when present; always fall back to engine figures.
+        allowed_set = _expand_allowed(figures)
+        used = [
+            f
+            for f in (out.figures_used or [])
+            if (_canon_amount(f) or _normalize_amount(f)) in allowed_set
+            or _normalize_amount(f) in allowed_set
+        ]
+        if not used:
+            used = figures[:40]
+        out = AgentOutput(
+            summary=out.summary,
+            recommendations=out.recommendations,
+            figures_used=used,
+        )
         agent_outputs[agent] = out.model_dump()
 
     # Merge
@@ -298,7 +395,11 @@ async def run_agents(
             figures_used=list(dict.fromkeys(figs)),
         )
 
-    guarded = apply_guardrail(merged, financial_year=fy)
+    guarded = apply_guardrail(
+        merged,
+        financial_year=fy,
+        allowed_figures=figures,
+    )
     return {
         "route": routes,
         "tool_results": ctx,

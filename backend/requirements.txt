@@ -1,6 +1,7 @@
 fastapi
 uvicorn[standard]
 pydantic>=2
+pydantic[email]
 pydantic-settings
 sqlalchemy[asyncio]
 aiosqlite
@@ -19,6 +20,7 @@ pdfplumber
 openpyxl
 python-multipart
 authlib
+bcrypt
 httpx
 pyyaml
 pytest

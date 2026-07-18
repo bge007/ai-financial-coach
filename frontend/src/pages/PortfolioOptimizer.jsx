@@ -12,9 +12,8 @@ import {
   YAxis,
 } from "recharts";
 import { apiPost } from "../api/client.js";
+import { CHART_PALETTE, COLORS } from "../theme.js";
 import { formatINR } from "../utils/format.js";
-
-const COLORS = ["#0A2E5C", "#2E7D32", "#D4AF37", "#5b6470"];
 
 export default function PortfolioOptimizer() {
   const [data, setData] = useState(null);
@@ -92,7 +91,7 @@ export default function PortfolioOptimizer() {
                 <PieChart>
                   <Pie data={sharpeWeights} dataKey="value" nameKey="name" outerRadius={90} label>
                     {sharpeWeights.map((_, i) => (
-                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                      <Cell key={i} fill={CHART_PALETTE[i % CHART_PALETTE.length]} />
                     ))}
                   </Pie>
                   <Tooltip formatter={(v) => `${Number(v).toFixed(1)}%`} />
@@ -107,7 +106,7 @@ export default function PortfolioOptimizer() {
                   <XAxis dataKey="volatility" unit="%" />
                   <YAxis unit="%" />
                   <Tooltip />
-                  <Line type="monotone" dataKey="ret" stroke="#0A2E5C" strokeWidth={2} dot />
+                  <Line type="monotone" dataKey="ret" stroke={COLORS.primary} strokeWidth={2} dot />
                 </LineChart>
               </ResponsiveContainer>
             </section>

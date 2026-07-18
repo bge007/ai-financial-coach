@@ -1,7 +1,8 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
 from app.models.enums import Category, Direction
 
@@ -63,6 +64,7 @@ class TransactionListOut(BaseModel):
     total: int
     page: int
     page_size: int
+    available_months: list[str] = []
 
 
 class RecategorizeIn(BaseModel):
@@ -94,3 +96,49 @@ class UserProfileOut(BaseModel):
     emergency_fund: Decimal | None
     risk_profile: str
     updated_at: datetime
+
+
+class SignupIn(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    email: EmailStr
+    dob: date
+    gender: Literal["female", "male", "other", "prefer_not_to_say"]
+    password: str = Field(min_length=8, max_length=128)
+    confirm_password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("name")
+    @classmethod
+    def strip_name(cls, v: str) -> str:
+        cleaned = v.strip()
+        if not cleaned:
+            raise ValueError("Name is required")
+        return cleaned
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, v: EmailStr) -> str:
+        return str(v).strip().lower()
+
+    @model_validator(mode="after")
+    def passwords_match(self) -> "SignupIn":
+        if self.password != self.confirm_password:
+            raise ValueError("Passwords do not match")
+        return self
+
+
+class LoginIn(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=1, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, v: EmailStr) -> str:
+        return str(v).strip().lower()
+
+
+class AuthUserOut(BaseModel):
+    id: int
+    email: str
+    name: str
+    dob: date | None = None
+    gender: str | None = None

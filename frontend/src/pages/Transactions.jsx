@@ -19,20 +19,13 @@ const CATEGORIES = [
   "other",
 ];
 
-function monthOptions(items) {
-  const set = new Set();
-  for (const t of items) {
-    if (t.date) set.add(t.date.slice(0, 7));
-  }
-  return Array.from(set).sort().reverse();
-}
-
 export default function Transactions() {
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [month, setMonth] = useState("");
   const [category, setCategory] = useState("");
+  const [direction, setDirection] = useState("");
   const [search, setSearch] = useState("");
   const [months, setMonths] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,6 +42,7 @@ export default function Transactions() {
     });
     if (month) params.set("month", month);
     if (category) params.set("category", category);
+    if (direction) params.set("direction", direction);
     if (search.trim()) params.set("search", search.trim());
     try {
       const r = await fetch(`/api/transactions?${params}`, { credentials: "include" });
@@ -60,15 +54,15 @@ export default function Transactions() {
       const body = await r.json();
       setItems(body.items || []);
       setTotal(body.total || 0);
-      if (!month && !category && !search) {
-        setMonths(monthOptions(body.items || []));
+      if (Array.isArray(body.available_months) && body.available_months.length) {
+        setMonths(body.available_months);
       }
     } catch {
       setError("Network error while loading transactions.");
     } finally {
       setLoading(false);
     }
-  }, [page, month, category, search]);
+  }, [page, month, category, direction, search]);
 
   useEffect(() => {
     load();
@@ -129,6 +123,20 @@ export default function Transactions() {
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
+          </select>
+        </label>
+        <label>
+          Direction
+          <select
+            value={direction}
+            onChange={(e) => {
+              setPage(1);
+              setDirection(e.target.value);
+            }}
+          >
+            <option value="">All</option>
+            <option value="debit">Debit</option>
+            <option value="credit">Credit</option>
           </select>
         </label>
         <label className="filter-search">

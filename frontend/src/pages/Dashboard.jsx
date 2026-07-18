@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { apiGet } from "../api/client.js";
+import { COLORS } from "../theme.js";
 import { formatINR } from "../utils/format.js";
 
 export default function Dashboard() {
@@ -62,8 +63,8 @@ export default function Dashboard() {
               <XAxis dataKey="month" />
               <YAxis />
               <Tooltip formatter={(v) => formatINR(v)} />
-              <Bar dataKey="income" fill="#1a73e8" />
-              <Bar dataKey="expenses" fill="#e8711a" />
+              <Bar dataKey="income" fill={COLORS.primary} />
+              <Bar dataKey="expenses" fill={COLORS.gold} />
             </BarChart>
           </ResponsiveContainer>
         </section>

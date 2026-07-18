@@ -39,7 +39,7 @@ export default function Coach() {
       </header>
       <div className="coach-compose">
         <textarea value={query} onChange={(e) => setQuery(e.target.value)} rows={3} />
-        <button className="file-btn" type="button" onClick={send} disabled={loading || !query.trim()}>
+        <button className="primary-btn" type="button" onClick={send} disabled={loading || !query.trim()}>
           {loading ? "Thinking…" : "Ask"}
         </button>
       </div>

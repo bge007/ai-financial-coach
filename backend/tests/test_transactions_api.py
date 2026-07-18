@@ -24,6 +24,10 @@ def test_list_and_filter_transactions(auth_client):
     assert body["total"] == 16
     assert len(body["items"]) == 16
     assert all(item["category"] is not None for item in body["items"])
+    assert "available_months" in body
+    assert len(body["available_months"]) >= 1
+    # Months must come from full history, not only the current page.
+    assert all(len(m) == 7 and m[4] == "-" for m in body["available_months"])
 
     jan = auth_client.get("/api/transactions?month=2026-01")
     assert jan.status_code == 200

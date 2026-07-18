@@ -397,7 +397,8 @@ export default function DataProfile() {
         )}
       </section>
 
-      <section className="card danger-card">
+      <section className="card privacy-card">
+        <p className="step-label">Privacy</p>
         <h3>Delete financial data</h3>
         <p className="step-sub">
           Permanently removes your SQLite records, uploaded sources and Qdrant
@@ -405,7 +406,7 @@ export default function DataProfile() {
         </p>
         <button
           type="button"
-          className="danger-btn"
+          className="outline-danger-btn"
           onClick={() => setConfirmDelete(true)}
         >
           Delete all my data
@@ -426,6 +427,7 @@ export default function DataProfile() {
             aria-describedby="delete-desc"
             onClick={(e) => e.stopPropagation()}
           >
+            <p className="step-label">Confirm</p>
             <h3 id="delete-title">Permanently delete all data?</h3>
             <p id="delete-desc" className="step-sub">
               This cannot be undone. Your transactions, uploads, computed
@@ -443,7 +445,7 @@ export default function DataProfile() {
               </button>
               <button
                 type="button"
-                className="danger-btn"
+                className="primary-btn"
                 disabled={deleting}
                 onClick={deleteAllData}
               >

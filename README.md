@@ -27,7 +27,7 @@ frontend (React)  ──►  backend (FastAPI)
                           ├── app/ingestion/  CSV/PDF parsing + transaction categorisation
                           ├── app/api/        REST endpoints (upload, analyze, agents, dashboard)
                           ├── app/models/     Pydantic schemas + DB models
-                          └── app/core/       auth (Google OAuth), config, security
+                          └── app/core/       auth (email/password + session JWT), config, security
 ```
 
 **Design principle:** the LLM orchestrates and explains; **all financial numbers come from deterministic engines** in `app/engines/`. The model never invents a tax figure, Sharpe ratio, or projection.
@@ -40,7 +40,7 @@ frontend (React)  ──►  backend (FastAPI)
 | Backend | FastAPI (Python 3.11+) |
 | Agents | LangGraph, keyword-based routing |
 | RAG | Qdrant (per-user collections) |
-| Auth | Google OAuth, multi-user |
+| Auth | Email/password (demo), multi-user JWT cookie |
 | Quant | pandas, numpy, PyPortfolioOpt / scipy |
 
 ## Hackathon quick start (local)
@@ -55,14 +55,13 @@ docker compose up --build
 
 - UI: http://localhost:5173  
 - API docs: http://localhost:8000/docs  
-- Demo login is on by default (`AUTH_DISABLED=true`) — no Google setup required.
+- Pre-login landing with **email/password** signup & login (`AUTH_DISABLED=false`). After auth you land on **Data & Profile**.
 
-**Judge demo path:** Data & Profile → upload `backend/tests/fixtures/hdfc_sample.csv` → Dashboard / Transactions / Analytics / advisors → Ask the Coach.
+**Judge demo path:** Sign up / Log in → Data & Profile → upload `backend/tests/fixtures/hdfc_sample.csv` → Dashboard / Transactions / Analytics / advisors → Ask the Coach.
 
 See [docs/RUNBOOK.md](docs/RUNBOOK.md) and [docs/PRIVACY.md](docs/PRIVACY.md).
 
-> To exercise real Google login, set `AUTH_DISABLED=false` and fill in
-> `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`. See [docs/MASTERPROMPT.md](docs/MASTERPROMPT.md) §3.
+> For an instant demo without signup, set `AUTH_DISABLED=true` (auto Demo User). Never enable that in production.
 
 ### Local dev (without Docker)
 
