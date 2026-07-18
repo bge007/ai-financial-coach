@@ -84,6 +84,13 @@ docker run -p 6333:6333 qdrant/qdrant
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the 8-phase build plan.
 
+## Master specification
+
+See [docs/MASTERPROMPT.md](docs/MASTERPROMPT.md) — a single self-contained
+specification of the whole system (scope, principles, stack, data model,
+engines, agents, API surface, and all 9 build phases). It is the narrative
+companion to `CLAUDE.md` and enough to rebuild the project end to end.
+
 ## Building with Claude Code
 
 This repo is set up as a Claude Code project:
