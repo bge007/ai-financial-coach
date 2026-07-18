@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     environment: str = "development"
     frontend_url: str = "http://localhost:5173"
 
+    # Dev-only bypass: skip Google OAuth and auto-authenticate a fixed demo
+    # user. The OAuth flow and get_current_user enforcement stay fully intact
+    # and are exercised by tests with this flag off. NEVER set true in prod.
+    auth_disabled: bool = False
+
 
 @lru_cache
 def get_settings() -> Settings:

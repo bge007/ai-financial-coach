@@ -4,6 +4,9 @@ import os
 os.environ["DATABASE_URL"] = "sqlite+aiosqlite://"
 os.environ["SECRET_KEY"] = "test-secret-key"
 os.environ["ENVIRONMENT"] = "test"
+# Real auth enforcement is the default under test; test_auth_disabled.py
+# flips this on explicitly to exercise the bypass path.
+os.environ["AUTH_DISABLED"] = "false"
 
 import pytest
 from fastapi.testclient import TestClient
