@@ -32,3 +32,6 @@ qdrant_storage/
 .vscode/
 .idea/
 .DS_Store
+
+# Claude Code local settings
+.claude/settings.local.json
