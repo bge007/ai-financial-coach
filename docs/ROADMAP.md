@@ -4,7 +4,7 @@ Run phases in order via Claude Code slash commands (`/phase0` ... `/phase8`).
 Check a box only once that phase's Definition of Done (in its command file
 under `.claude/commands/`) is fully met and verified.
 
-- [ ] **Phase 0 — Foundation & Auth** — FastAPI + React, LangGraph, Qdrant,
+- [x] **Phase 0 — Foundation & Auth** — FastAPI + React, LangGraph, Qdrant,
       Google OAuth multi-user, INR/India config
 - [ ] **Phase 1 — Data & Profile** — CSV/PDF upload → parsed per-user
       financial profile

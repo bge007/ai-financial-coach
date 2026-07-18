@@ -1,8 +1,11 @@
 fastapi
 uvicorn[standard]
 pydantic>=2
+pydantic-settings
 sqlalchemy[asyncio]
 aiosqlite
+alembic
+itsdangerous
 langgraph
 langchain-core
 qdrant-client
