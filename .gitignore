@@ -19,6 +19,8 @@ credentials*.json
 # Data — never commit user financial data
 data/
 uploads/
+*.db
+*.sqlite3
 *.csv
 *.pdf
 !docs/**/*.pdf

@@ -8,7 +8,7 @@ TASKS:
 1. Production Dockerfiles (multi-stage, non-root user); frontend served as
    static build behind the backend or a CDN.
 2. Deploy config for one target (Fly.io / Render / a VPS with compose +
-   Caddy for TLS). Managed or volume-backed Postgres and Qdrant with backups.
+   Caddy for TLS). Volume-backed SQLite database file and Qdrant with backups.
 3. Observability: structured JSON logs, request IDs, LangSmith or Langfuse
    tracing on every agent run, per-run token cost logging, /metrics or a
    simple cost+latency dashboard.

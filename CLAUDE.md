@@ -11,7 +11,7 @@ orchestration, Qdrant RAG, FastAPI backend, React frontend.
 
 ## Fixed stack — do not substitute
 
-- Backend: Python 3.11, FastAPI, SQLAlchemy (async) + Postgres, Pydantic v2
+- Backend: Python 3.11, FastAPI, SQLAlchemy (async) + SQLite (aiosqlite), Pydantic v2
 - Agents: LangGraph, keyword-based routing (config-driven keyword map)
 - RAG: Qdrant, one payload-filtered namespace per user
 - Auth: Google OAuth via authlib, multi-user, JWT session cookie

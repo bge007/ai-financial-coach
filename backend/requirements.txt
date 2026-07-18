@@ -2,7 +2,7 @@ fastapi
 uvicorn[standard]
 pydantic>=2
 sqlalchemy[asyncio]
-asyncpg
+aiosqlite
 langgraph
 langchain-core
 qdrant-client
