@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Node
+node_modules/
+frontend/dist/
+
+# Env & secrets
+.env
+*.pem
+credentials*.json
+
+# Data — never commit user financial data
+data/
+uploads/
+*.csv
+*.pdf
+!docs/**/*.pdf
+
+# Qdrant local storage
+qdrant_storage/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
