@@ -14,7 +14,12 @@ orchestration, Qdrant RAG, FastAPI backend, React frontend.
 - Backend: Python 3.11, FastAPI, SQLAlchemy (async) + SQLite (aiosqlite), Pydantic v2
 - Agents: LangGraph, keyword-based routing (config-driven keyword map)
 - RAG: Qdrant, one payload-filtered namespace per user
-- Auth: Google OAuth via authlib, multi-user, JWT session cookie
+- Auth: Google OAuth via authlib, multi-user, JWT session cookie. A
+  dev-only `AUTH_DISABLED` flag (default `true` in `.env.example`) bypasses
+  login and auto-authenticates a fixed demo user via `get_current_user` —
+  the OAuth flow and cookie enforcement stay fully implemented and are
+  covered by tests with the flag off. Never set `AUTH_DISABLED=true` in
+  production.
 - Frontend: React (Vite), Recharts
 - Quant: pandas, numpy, scipy, PyPortfolioOpt
 - LLM: OpenRouter API (OpenAI-compatible; model set via `LLM_MODEL`, default
@@ -32,7 +37,9 @@ orchestration, Qdrant RAG, FastAPI backend, React frontend.
    Never hardcode them in Python. Every output using them states the FY.
 3. Multi-user isolation is absolute: every DB query filters by `user_id`; every
    Qdrant query filters by user payload. Any new endpoint or tool touching user
-   data needs a test proving user A cannot read user B's data.
+   data needs a test proving user A cannot read user B's data. This holds
+   regardless of `AUTH_DISABLED` — the demo user is still a `user_id` like any
+   other and must not see a special-cased path around isolation.
 4. Never log raw statement contents or PII. Currency is INR throughout,
    formatted with Indian digit grouping (₹1,50,000) in the frontend.
 5. Every user-facing recommendation carries: "Informational only — not

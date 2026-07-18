@@ -66,7 +66,10 @@ These are load-bearing. Violating any of them is a defect, not a style choice.
    in Python. Every output using them states the FY.
 3. **Multi-user isolation is absolute.** Every DB query filters by `user_id`;
    every Qdrant query filters by user payload. Any new endpoint/tool touching
-   user data ships with a test proving user A cannot read user B's data.
+   user data ships with a test proving user A cannot read user B's data. This
+   holds even with `AUTH_DISABLED=true` (§3, §11 Phase 0) — the auto-created
+   demo user is a `user_id` like any other; no code path may special-case it
+   around isolation.
 4. **Never log raw statement contents or PII.** Currency is INR throughout,
    formatted with Indian digit grouping (₹1,50,000) in the frontend.
 5. **Every recommendation carries the disclaimer:** "Informational only — not
@@ -83,6 +86,14 @@ These are load-bearing. Violating any of them is a defect, not a style choice.
 - **Agents:** LangGraph, keyword-based routing (config-driven keyword map).
 - **RAG:** Qdrant, one payload-filtered namespace per user.
 - **Auth:** Google OAuth via authlib, multi-user, JWT session cookie (HTTP-only).
+  A dev-only `AUTH_DISABLED` flag (default `true` in `.env.example`) makes
+  `get_current_user` auto-authenticate a fixed demo user (`google_sub =
+  "demo-user"`) with no cookie required, so the app runs without Google
+  credentials configured. The OAuth flow, JWT verification, and 401
+  enforcement remain fully implemented underneath the flag and are covered by
+  tests with it forced off (`backend/tests/conftest.py`); the bypass itself is
+  covered by `backend/tests/test_auth_disabled.py`. **Never set
+  `AUTH_DISABLED=true` in production.**
 - **Frontend:** React (Vite), Recharts.
 - **Quant:** pandas, numpy, scipy, PyPortfolioOpt.
 - **LLM:** **OpenRouter** (OpenAI-compatible SDK). Model via `LLM_MODEL`
@@ -234,7 +245,7 @@ when unauthenticated, **403/404** when reaching across users.
 
 | # | Phase | Deliverable | Key DoD |
 |---|---|---|---|
-| 0 | Foundation & Auth | FastAPI+React skeleton, async SQLAlchemy+SQLite, Alembic, Google OAuth + JWT cookie, `get_current_user`, sidebar shell | login round-trip; non-auth calls 401; config + auth tests |
+| 0 | Foundation & Auth | FastAPI+React skeleton, async SQLAlchemy+SQLite, Alembic, Google OAuth + JWT cookie, `get_current_user` (+ dev-only `AUTH_DISABLED` demo-user bypass, default on), sidebar shell | login round-trip (or demo-user bypass); non-auth calls 401 when enabled; config + auth + bypass tests |
 | 1 | Data & Profile | Transaction/UploadedFile/FinancialProfile models, tolerant CSV parser (HDFC/ICICI/SBI), pdfplumber PDF parser, idempotent `/api/upload`, profile engine | 3 CSV + 1 PDF fixtures parse; dup upload adds 0 rows; profile matches hand-computed; cross-user test |
 | 2 | Categorization | data-driven rules first, batched LLM fallback (strict JSON, cached by hash), manual correction persists as user rule | ≥80% by rules alone; malformed LLM JSON → "other", never crashes; correction wins on re-run |
 | 3 | RAG + tools | Qdrant store (user_id filter), retriever w/ citations, 6 typed tabular tools, index docs on upload | cross-user isolation; tool outputs match fixtures; citations usable |
@@ -274,7 +285,10 @@ when unauthenticated, **403/404** when reaching across users.
 
 `.env` (from `.env.example`): `DATABASE_URL` (sqlite+aiosqlite), `QDRANT_URL`,
 `GOOGLE_CLIENT_ID/SECRET`, `OAUTH_REDIRECT_URI`, `OPENROUTER_API_KEY`,
-`OPENROUTER_BASE_URL`, `LLM_MODEL`, `SECRET_KEY`, `ENVIRONMENT`, `FRONTEND_URL`.
+`OPENROUTER_BASE_URL`, `LLM_MODEL`, `SECRET_KEY`, `ENVIRONMENT`, `FRONTEND_URL`,
+`AUTH_DISABLED` (default `true` — skips Google login via an auto-created demo
+user; set `false` and configure `GOOGLE_CLIENT_ID/SECRET` to exercise real
+OAuth; never `true` in production).
 
 ```bash
 docker compose up --build          # frontend :5173, backend :8000/docs, qdrant :6333

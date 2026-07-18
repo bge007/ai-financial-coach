@@ -51,12 +51,19 @@ git clone https://github.com/<you>/ai-financial-coach.git
 cd ai-financial-coach
 
 # 2. environment
-cp .env.example .env   # fill in keys
+cp .env.example .env   # fill in keys (OpenRouter key needed for chat/agents)
 
 # 3. run everything
 docker compose up --build
 # frontend: http://localhost:5173   backend: http://localhost:8000/docs
 ```
+
+> **Login is disabled by default** (`AUTH_DISABLED=true` in `.env.example`) —
+> the app auto-authenticates a fixed demo user so you can run it without
+> setting up Google OAuth. To exercise real Google login, set
+> `AUTH_DISABLED=false` and fill in `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`.
+> The OAuth code path stays fully implemented and tested either way — see
+> [docs/MASTERPROMPT.md](docs/MASTERPROMPT.md) §3.
 
 ### Local dev (without Docker)
 
