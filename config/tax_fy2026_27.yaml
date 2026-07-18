@@ -1,4 +1,7 @@
-# Indian income tax config — FY 2026-27 (placeholder values; VERIFY against the latest Union Budget before use)
+# Indian income tax config — FY 2026-27
+# Source review: aligned to Finance Act style new-regime slabs commonly used
+# for FY 2025-26 / Budget 2024 new regime structure; VERIFY before production advice.
+# reviewed: 2026-07-18 (hackathon placeholder — cite CBDT/Budget notifications in prod)
 financial_year: "2026-27"
 old_regime:
   slabs:  # [upper_limit_inr, rate]

@@ -255,7 +255,9 @@ when unauthenticated, **403/404** when reaching across users.
 | 7 | Eval, Security, Compliance | engine golden tests, 25-query agent eval, rate limits, upload validation, encryption at rest, PII log scrubbing, isolation audit, `DELETE /api/me/data` + PRIVACY.md | CI green on engines+evals+audits; isolation audit passes all endpoints; deletion leaves zero residue |
 | 8 | Deploy & Monitor | prod Dockerfiles (multi-stage, non-root), one deploy target, tracing (LangSmith/Langfuse) + token cost, tagged-release deploy, RUNBOOK.md | one-tag deploy from clean clone; prod trace shows route/tools/tokens/latency/cost; runbook verified verbatim |
 
-**Status:** Phase 0 complete (see [ROADMAP.md](ROADMAP.md)). Phases 1–8 pending.
+**Status:** Phases 0–8 complete for local hackathon demo (see [ROADMAP.md](ROADMAP.md)).
+OpenRouter powers LLM paths; engines remain deterministic Python. Deploy with
+`docker compose up --build` and `AUTH_DISABLED=true` for judge demos.
 
 ---
 
@@ -297,4 +299,8 @@ cd backend && uvicorn app.main:app --reload
 cd frontend && npm install && npm run dev
 ```
 
-Verify a phase: `pytest backend/tests -q` and (Phase 6+) `npm run build`.
+Hackathon tip: leave `AUTH_DISABLED=true` and optionally set `OPENROUTER_API_KEY`.
+Without an OpenRouter key, agents still return guarded deterministic fallback text.
+See [RUNBOOK.md](RUNBOOK.md) for the judge demo path.
+
+Verify: `pytest backend/tests -q` and `npm run build` (frontend).

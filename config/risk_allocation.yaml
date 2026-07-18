@@ -1,0 +1,19 @@
+# Equity / debt / cash allocation matrices by risk profile.
+# Age tilt: equity_share *= max(0.4, (100 - age) / 100) for aggressive/moderate only.
+profiles:
+  conservative:
+    equity: 0.30
+    debt: 0.60
+    cash: 0.10
+  moderate:
+    equity: 0.55
+    debt: 0.35
+    cash: 0.10
+  aggressive:
+    equity: 0.75
+    debt: 0.20
+    cash: 0.05
+expected_returns:
+  equity: 0.12
+  debt: 0.07
+  cash: 0.04

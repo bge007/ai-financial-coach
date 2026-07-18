@@ -43,31 +43,33 @@ frontend (React)  ──►  backend (FastAPI)
 | Auth | Google OAuth, multi-user |
 | Quant | pandas, numpy, PyPortfolioOpt / scipy |
 
-## Getting started
+## Hackathon quick start (local)
 
 ```bash
-# 1. clone
 git clone https://github.com/<you>/ai-financial-coach.git
 cd ai-financial-coach
-
-# 2. environment
-cp .env.example .env   # fill in keys (OpenRouter key needed for chat/agents)
-
-# 3. run everything
+cp .env.example .env
+# Optional: set OPENROUTER_API_KEY for richer coach answers (works without it).
 docker compose up --build
-# frontend: http://localhost:5173   backend: http://localhost:8000/docs
 ```
 
-> **Login is disabled by default** (`AUTH_DISABLED=true` in `.env.example`) —
-> the app auto-authenticates a fixed demo user so you can run it without
-> setting up Google OAuth. To exercise real Google login, set
-> `AUTH_DISABLED=false` and fill in `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`.
-> The OAuth code path stays fully implemented and tested either way — see
-> [docs/MASTERPROMPT.md](docs/MASTERPROMPT.md) §3.
+- UI: http://localhost:5173  
+- API docs: http://localhost:8000/docs  
+- Demo login is on by default (`AUTH_DISABLED=true`) — no Google setup required.
+
+**Judge demo path:** Data & Profile → upload `backend/tests/fixtures/hdfc_sample.csv` → Dashboard / Transactions / Analytics / advisors → Ask the Coach.
+
+See [docs/RUNBOOK.md](docs/RUNBOOK.md) and [docs/PRIVACY.md](docs/PRIVACY.md).
+
+> To exercise real Google login, set `AUTH_DISABLED=false` and fill in
+> `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`. See [docs/MASTERPROMPT.md](docs/MASTERPROMPT.md) §3.
 
 ### Local dev (without Docker)
 
 ```bash
+# qdrant
+docker run --rm -p 6333:6333 qdrant/qdrant:v1.13.2
+
 # backend
 cd backend
 python -m venv .venv && source .venv/bin/activate
@@ -77,9 +79,6 @@ uvicorn app.main:app --reload
 # frontend
 cd frontend
 npm install && npm run dev
-
-# qdrant
-docker run -p 6333:6333 qdrant/qdrant
 ```
 
 ## Configuration

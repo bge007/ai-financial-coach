@@ -4,7 +4,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
+from app.api.ask import router as ask_router
 from app.api.auth import router as auth_router
+from app.api.dashboard import router as dashboard_router
+from app.api.privacy import router as privacy_router
+from app.api.transactions import router as transactions_router
+from app.api.upload import router as upload_router
 from app.core.config import get_settings
 from app.core.db import init_db
 
@@ -32,8 +37,23 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+app.include_router(upload_router)
+app.include_router(transactions_router)
+app.include_router(ask_router)
+app.include_router(dashboard_router)
+app.include_router(privacy_router)
 
 
 @app.get("/health")
 async def health() -> dict:
     return {"status": "ok"}
+
+
+@app.get("/metrics")
+async def metrics() -> dict:
+    """Lightweight hackathon metrics endpoint (no Prometheus scrape required)."""
+    return {
+        "status": "ok",
+        "service": "ai-financial-coach",
+        "note": "Agent token/latency details are logged per /api/ask run",
+    }

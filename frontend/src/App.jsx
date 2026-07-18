@@ -2,19 +2,39 @@ import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import Login from "./pages/Login.jsx";
 import Shell from "./components/Shell.jsx";
-import Stub from "./pages/Stub.jsx";
+import DataProfile from "./pages/DataProfile.jsx";
+import Transactions from "./pages/Transactions.jsx";
+import Dashboard from "./pages/Dashboard.jsx";
+import Analytics from "./pages/Analytics.jsx";
+import BudgetAdvisor from "./pages/BudgetAdvisor.jsx";
+import InvestmentAdvisor from "./pages/InvestmentAdvisor.jsx";
+import PortfolioOptimizer from "./pages/PortfolioOptimizer.jsx";
+import TaxRetirement from "./pages/TaxRetirement.jsx";
+import Coach from "./pages/Coach.jsx";
 
 export const NAV_ITEMS = [
-  { path: "/", label: "Dashboard", phase: 6 },
-  { path: "/data", label: "Data & Profile", phase: 1 },
-  { path: "/transactions", label: "Transactions", phase: 2 },
-  { path: "/analytics", label: "Analytics", phase: 6 },
-  { path: "/budget", label: "Budget Advisor", phase: 6 },
-  { path: "/investment", label: "Investment Advisor", phase: 6 },
-  { path: "/portfolio", label: "Portfolio Optimizer", phase: 6 },
-  { path: "/tax", label: "Tax & Retirement", phase: 6 },
-  { path: "/coach", label: "Ask the Coach", phase: 6 },
+  { path: "/", label: "Dashboard", element: "dashboard" },
+  { path: "/data", label: "Data & Profile", element: "data" },
+  { path: "/transactions", label: "Transactions", element: "transactions" },
+  { path: "/analytics", label: "Analytics", element: "analytics" },
+  { path: "/budget", label: "Budget Advisor", element: "budget" },
+  { path: "/investment", label: "Investment Advisor", element: "investment" },
+  { path: "/portfolio", label: "Portfolio Optimizer", element: "portfolio" },
+  { path: "/tax", label: "Tax & Retirement", element: "tax" },
+  { path: "/coach", label: "Ask the Coach", element: "coach" },
 ];
+
+const PAGES = {
+  dashboard: <Dashboard />,
+  data: <DataProfile />,
+  transactions: <Transactions />,
+  analytics: <Analytics />,
+  budget: <BudgetAdvisor />,
+  investment: <InvestmentAdvisor />,
+  portfolio: <PortfolioOptimizer />,
+  tax: <TaxRetirement />,
+  coach: <Coach />,
+};
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -40,11 +60,7 @@ export default function App() {
     <Routes>
       <Route element={<Shell user={user} />}>
         {NAV_ITEMS.map((item) => (
-          <Route
-            key={item.path}
-            path={item.path}
-            element={<Stub label={item.label} phase={item.phase} />}
-          />
+          <Route key={item.path} path={item.path} element={PAGES[item.element]} />
         ))}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

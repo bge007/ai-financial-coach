@@ -1,0 +1,115 @@
+# Deterministic merchant / narration categorization rules for Indian bank statements.
+# Higher priority wins. User manual corrections are stored in DB with priority >= 1000.
+# Patterns are case-insensitive regexes matched against the normalized description.
+
+rules:
+  - category: dining
+    priority: 100
+    patterns:
+      - "SWIGGY"
+      - "ZOMATO"
+      - "EATSURE"
+      - "UBER\\s*EATS"
+      - "DOMINOS|DOMINO'?S"
+      - "MCCAIN|BURGER\\s*KING|KFC|PIZZA\\s*HUT"
+
+  - category: travel
+    priority: 100
+    patterns:
+      - "IRCTC"
+      - "MAKEMYTRIP|MAKE\\s*MY\\s*TRIP"
+      - "GOIBIBO|CLEARTRIP|YATRA"
+      - "UBER(?!\\s*EATS)"
+      - "OLA\\s*(CABS|MONEY)?"
+      - "RAPIDO"
+      - "INDIGO|SPICEJET|AIR\\s*INDIA|VISTARA"
+      - "INDIAN\\s*RAILWAY|RAILWAY"
+
+  - category: sip_investment
+    priority: 110
+    patterns:
+      - "ACH.*SIP|SIP.*ACH"
+      - "GROWW"
+      - "ZERODHA|COIN\\s*ZERODHA"
+      - "KUVERA|PAYTM\\s*MONEY"
+      - "\\bMF\\b|MUTUAL\\s*FUND"
+      - "CAMS|KARVY|KFINTECH"
+      - "NSE\\s*MF|BSE\\s*STAR"
+
+  - category: salary
+    priority: 120
+    patterns:
+      - "NEFT.*SALARY|SALARY.*NEFT"
+      - "SALARY\\s*CREDIT"
+      - "SALARY"
+      - "PAYROLL"
+
+  - category: utilities
+    priority: 100
+    patterns:
+      - "BBPS"
+      - "ELECTRICITY|BESCOM|MSEB|TATA\\s*POWER"
+      - "\\bJIO\\b|AIRTEL|VI\\s*INDIA|VODAFONE|BSNL"
+      - "ACT\\s*FIBER|HATHWAY|EXPRESSVPN"
+      - "WATER\\s*BOARD|BWSSB|GAS\\s*BILL|INDRAPRASTHA\\s*GAS"
+
+  - category: emi
+    priority: 120
+    patterns:
+      - "\\bEMI\\b"
+      - "LOAN\\s*(EMI|INSTAL|REPAY)"
+      - "ECS\\s*LOAN"
+      - "BAJAJ\\s*FINSERV.*EMI|HDFC.*LOAN|SBI.*LOAN"
+
+  - category: groceries
+    priority: 100
+    patterns:
+      - "DMART|D-?MART"
+      - "BIGBASKET|BIG\\s*BASKET"
+      - "BLINKIT|ZEPTO|INSTAMART"
+      - "BIGBAZAAR|BIG\\s*BAZAAR|RELIANCE\\s*FRESH|MORE\\s*SUPERMARKET"
+      - "NATURE'?S\\s*BASKET"
+
+  - category: rent
+    priority: 110
+    patterns:
+      - "\\bRENT\\b"
+      - "HOUSE\\s*RENT|RENTAL\\s*PAYMENT"
+
+  - category: shopping
+    priority: 90
+    patterns:
+      - "AMAZON|FLIPKART|MYNTRA|AJIO|NYKAA|MEESHO"
+      - "CROMA|RELIANCE\\s*DIGITAL"
+
+  - category: insurance
+    priority: 100
+    patterns:
+      - "LIC\\b|HDFC\\s*LIFE|ICICI\\s*PRU|MAX\\s*LIFE"
+      - "HEALTH\\s*INSURANCE|STAR\\s*HEALTH|NIVA\\s*BUPA"
+      - "POLICYBAZAAR|INSURANCE\\s*PREMIUM"
+
+  - category: medical
+    priority: 100
+    patterns:
+      - "APOLLO\\s*PHARMACY|PHARMEASY|1MG|NETMEDS"
+      - "HOSPITAL|CLINIC|DIAGNOSTIC|PATHLAB|THYROCARE"
+
+  - category: entertainment
+    priority: 90
+    patterns:
+      - "NETFLIX|SPOTIFY|PRIME\\s*VIDEO|HOTSTAR|SONYLIV|ZEE5|YOUTUBE\\s*PREMIUM"
+      - "PVR|INOX|BOOKMYSHOW"
+
+  - category: education
+    priority: 100
+    patterns:
+      - "BYJU|UNACADEMY|COURSERA|UDEMY"
+      - "SCHOOL\\s*FEE|COLLEGE\\s*FEE|TUITION"
+
+  - category: transfer
+    priority: 80
+    patterns:
+      - "SELF\\s*TRANSFER|TRANSFER\\s*TO\\s*SELF|OWN\\s*A/?C"
+      - "UPI.*SELF|TRF\\s*TO\\s*SELF"
+      - "IMPS|NEFT|RTGS"

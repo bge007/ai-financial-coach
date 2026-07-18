@@ -1,0 +1,38 @@
+# Keyword → agent routing (case-insensitive substring match).
+# Multiple matches → run all matched agents and merge.
+routes:
+  tax_agent:
+    - tax
+    - regime
+    - 80c
+    - 80d
+    - nps
+    - epf
+    - cess
+  portfolio_agent:
+    - sharpe
+    - portfolio
+    - frontier
+    - optimi
+    - volatility
+  investment_agent:
+    - invest
+    - sip
+    - allocation
+    - equity
+    - risk profile
+  budget_agent:
+    - budget
+    - spend
+    - 50/30/20
+    - 50-30-20
+    - expense
+  debt_agent:
+    - debt
+    - emi
+    - loan
+    - payoff
+    - prepay
+    - avalanche
+    - snowball
+default: coach_agent

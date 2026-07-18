@@ -1,0 +1,23 @@
+# Category → 50/30/20 budget bucket mapping
+needs:
+  - rent
+  - groceries
+  - utilities
+  - emi
+  - insurance
+  - medical
+  - education
+  - transfer
+wants:
+  - dining
+  - shopping
+  - travel
+  - entertainment
+  - other
+savings:
+  # Intentional investing only. Residual surplus is added in the engine.
+  - sip_investment
+targets:
+  needs: 0.50
+  wants: 0.30
+  savings: 0.20

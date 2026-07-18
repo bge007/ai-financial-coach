@@ -13,6 +13,9 @@ class Settings(BaseSettings):
 
     # Qdrant
     qdrant_url: str = "http://localhost:6333"
+    qdrant_collection: str = "user_docs"
+    embedding_dim: int = 384
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
 
     # Google OAuth
     google_client_id: str = ""

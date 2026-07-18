@@ -9,6 +9,7 @@ itsdangerous
 langgraph
 langchain-core
 qdrant-client
+fastembed
 openai
 pandas
 numpy

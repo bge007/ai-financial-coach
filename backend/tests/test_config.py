@@ -11,7 +11,10 @@ def test_settings_load_from_env(monkeypatch):
     assert s.llm_model == "anthropic/claude-sonnet-4.5"
 
 
-def test_settings_have_sane_defaults():
+def test_settings_have_sane_defaults(monkeypatch):
+    # Clear test harness overrides so field defaults are visible.
+    for key in ("QDRANT_URL", "DATABASE_URL", "SECRET_KEY", "ENVIRONMENT", "AUTH_DISABLED"):
+        monkeypatch.delenv(key, raising=False)
     s = Settings(_env_file=None)
     assert s.openrouter_base_url == "https://openrouter.ai/api/v1"
     assert s.qdrant_url.startswith("http")
