@@ -44,6 +44,7 @@ export default function Coach() {
         </button>
       </div>
       {error && <div className="banner error">{error}</div>}
+      {meta?.llm_warning && <div className="banner warn">{meta.llm_warning}</div>}
       {meta && (
         <div className="route-badges">
           {(meta.route || []).map((r) => (

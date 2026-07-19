@@ -12,6 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { apiPost } from "../api/client.js";
+import PortfolioOptimizerSkeleton from "../components/PortfolioOptimizerSkeleton.jsx";
 import { CHART_PALETTE, COLORS } from "../theme.js";
 import { formatINR } from "../utils/format.js";
 
@@ -30,10 +31,11 @@ export default function PortfolioOptimizer() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <p className="muted">Optimising portfolio…</p>;
+  if (loading) return <PortfolioOptimizerSkeleton />;
   if (error) return <div className="banner error">{error}</div>;
 
   const portfolio = data?.tool_results?.portfolio;
+  const portfolioError = data?.tool_results?.portfolio_error;
   const sharpeWeights = portfolio
     ? Object.entries(portfolio.max_sharpe.weights).map(([name, value]) => ({
         name,
@@ -58,7 +60,11 @@ export default function PortfolioOptimizer() {
       </header>
 
       {!portfolio ? (
-        <p className="muted empty-hint">Could not compute portfolio weights yet. Retry in a moment.</p>
+        <p className="muted empty-hint">
+          {portfolioError
+            ? `Could not compute portfolio weights: ${portfolioError}`
+            : "Could not compute portfolio weights yet. Retry in a moment."}
+        </p>
       ) : (
         <>
           <div className="profile-grid">

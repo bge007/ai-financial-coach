@@ -61,6 +61,8 @@ async def ask_coach(
                 for c in result["rag_chunks"]
             ],
         }
+        if result.get("llm_warning"):
+            meta["llm_warning"] = result["llm_warning"]
         yield f"event: meta\ndata: {json.dumps(meta)}\n\n"
         answer = result["answer"]
         text = answer["summary"]
@@ -95,6 +97,7 @@ async def analyze_agent(
         "tool_results": result["tool_results"],
         "answer": result["answer"],
         "rag_chunks": result["rag_chunks"],
+        "llm_warning": result.get("llm_warning"),
     }
 
 

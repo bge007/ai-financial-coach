@@ -23,14 +23,29 @@ export async function apiPost(path, body) {
 
 /** Consume SSE from POST /api/ask */
 export async function askStream(query, { onMeta, onToken, onDone, onError }) {
-  const r = await fetch("/api/ask", {
+  return streamPost("/api/ask", { query }, { onMeta, onToken, onDone, onError });
+}
+
+/** Expert consultation chat (premium) */
+export async function consultationStream(body, { onMeta, onToken, onDone, onError }) {
+  return streamPost("/api/premium/consultation/chat", body, {
+    onMeta,
+    onToken,
+    onDone,
+    onError,
+  });
+}
+
+async function streamPost(path, body, { onMeta, onToken, onDone, onError }) {
+  const r = await fetch(path, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query }),
+    body: JSON.stringify(body ?? {}),
   });
   if (!r.ok) {
-    onError?.(new Error(`Ask failed (${r.status})`));
+    const errBody = await r.json().catch(() => ({}));
+    onError?.(new Error(errBody.detail || `Request failed (${r.status})`));
     return;
   }
   const reader = r.body.getReader();

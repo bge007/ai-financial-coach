@@ -246,6 +246,10 @@ async def default_openrouter_batch(descriptions: list[str]) -> dict[int, str]:
     client = AsyncOpenAI(
         api_key=settings.openrouter_api_key,
         base_url=settings.openrouter_base_url,
+        default_headers={
+            "HTTP-Referer": settings.frontend_url,
+            "X-Title": "MoneyMitra",
+        },
     )
     numbered = "\n".join(f"{i}: {d}" for i, d in enumerate(descriptions))
     allowed = ", ".join(sorted(VALID_CATEGORIES))

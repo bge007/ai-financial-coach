@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { formatINR } from "../utils/format.js";
 
-const ACCEPT = ".csv,.pdf,.xlsx,.xls,text/csv,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+const ACCEPT = ".csv,.pdf,text/csv,application/pdf";
 
 const EMPTY_FORM = {
   name: "",
@@ -22,9 +22,11 @@ export default function DataProfile() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
+  const [uploadMsg, setUploadMsg] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const fileInputRef = useRef(null);
 
   const loadAll = useCallback(async () => {
     setLoadingProfile(true);
@@ -126,8 +128,17 @@ export default function DataProfile() {
 
   async function uploadFile(file) {
     if (!file) return;
+
+    const ext = file.name.toLowerCase().split(".").pop();
+    if (ext !== "csv" && ext !== "pdf") {
+      setError("Only CSV and PDF bank statements are supported.");
+      setUploadMsg(null);
+      return;
+    }
+
     setUploading(true);
     setError(null);
+    setUploadMsg(null);
     setSummary(null);
     try {
       const data = new FormData();
@@ -139,16 +150,38 @@ export default function DataProfile() {
       });
       const body = await r.json().catch(() => ({}));
       if (!r.ok) {
-        setError(body.detail || "Upload failed.");
+        if (r.status === 401) {
+          setError("Session expired — please log in again.");
+          return;
+        }
+        const detail = body.detail;
+        setError(
+          typeof detail === "string"
+            ? detail
+            : Array.isArray(detail)
+              ? detail.map((d) => d.msg || JSON.stringify(d)).join("; ")
+              : "Upload failed."
+        );
         return;
       }
       setSummary(body.summary);
       setComputed(body.profile);
+      if (body.summary?.duplicate) {
+        setUploadMsg("This file was already uploaded — showing existing data.");
+      } else {
+        setUploadMsg(
+          `Uploaded ${body.summary?.rows_parsed ?? 0} transactions from ${body.summary?.filename ?? file.name}.`
+        );
+      }
     } catch {
       setError("Network error during upload.");
     } finally {
       setUploading(false);
     }
+  }
+
+  function onChooseFileClick() {
+    fileInputRef.current?.click();
   }
 
   function onFileInput(e) {
@@ -202,6 +235,7 @@ export default function DataProfile() {
 
       {error && <div className="banner error">{error}</div>}
       {savedMsg && <div className="banner ok">{savedMsg}</div>}
+      {uploadMsg && <div className="banner ok">{uploadMsg}</div>}
 
       <div className="profile-steps">
         <section className="step-card">
@@ -310,18 +344,26 @@ export default function DataProfile() {
           </div>
           <h3>Upload a bank statement</h3>
           <p className="step-sub">
-            Indian bank CSV, XLSX or text-based PDF, up to 10 MB
+            Indian bank CSV or text-based PDF, up to 10 MB
           </p>
-          <label className="primary-btn file-btn-inline">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={ACCEPT}
+            onChange={onFileInput}
+            disabled={uploading}
+            className="file-input-hidden"
+            aria-hidden="true"
+            tabIndex={-1}
+          />
+          <button
+            type="button"
+            className="primary-btn file-btn-inline"
+            onClick={onChooseFileClick}
+            disabled={uploading}
+          >
             {uploading ? "Uploading…" : "Choose file"}
-            <input
-              type="file"
-              accept={ACCEPT}
-              onChange={onFileInput}
-              disabled={uploading}
-              hidden
-            />
-          </label>
+          </button>
         </section>
       </div>
 

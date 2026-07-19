@@ -1,0 +1,73 @@
+# Known recurring subscription / OTT / telecom merchants (Indian bank narrations).
+merchants:
+  - name: Netflix
+    patterns:
+      - "NETFLIX"
+
+  - name: Disney+ Hotstar
+    patterns:
+      - "HOTSTAR"
+      - "DISNEY\\+"
+
+  - name: Amazon Prime
+    patterns:
+      - "PRIME\\s*VIDEO"
+      - "AMAZON\\s*PRIME"
+
+  - name: Spotify
+    patterns:
+      - "SPOTIFY"
+
+  - name: SonyLIV
+    patterns:
+      - "SONYLIV"
+
+  - name: Zee5
+    patterns:
+      - "ZEE5"
+
+  - name: YouTube Premium
+    patterns:
+      - "YOUTUBE\\s*PREMIUM"
+
+  - name: Jio
+    patterns:
+      - "\\bJIO\\b"
+
+  - name: Airtel
+    patterns:
+      - "AIRTEL"
+
+  - name: Vi (Vodafone Idea)
+    patterns:
+      - "VI\\s*INDIA"
+      - "VODAFONE"
+
+  - name: ACT Fibernet
+    patterns:
+      - "ACT\\s*FIBER"
+
+  - name: Apple Services
+    patterns:
+      - "APPLE\\.COM/BILL"
+      - "ICLOUD"
+
+  - name: Google One
+    patterns:
+      - "GOOGLE\\s*ONE"
+      - "GOOGLE\\s*STORAGE"
+
+  - name: Microsoft 365
+    patterns:
+      - "MICROSOFT"
+      - "OFFICE\\s*365"
+
+  - name: LinkedIn Premium
+    patterns:
+      - "LINKEDIN"
+
+  - name: Gym / Fitness
+    patterns:
+      - "CULT\\.FIT"
+      - "GOLDS\\s*GYM"
+      - "ANYTIME\\s*FITNESS"
