@@ -49,8 +49,18 @@ def _infer_legacy_revision(insp) -> str | None:
     """Map an existing create_all schema to the latest applied alembic revision."""
     if not insp.has_table("users"):
         return None
+    if insp.has_table("consultation_bookings"):
+        columns = {column["name"] for column in insp.get_columns("consultation_bookings")}
+        return "0009" if {"expert_rating", "closed_at"} <= columns else "0008"
+    if insp.has_table("uploaded_files"):
+        columns = {column["name"] for column in insp.get_columns("uploaded_files")}
+        if "size" in columns and "content_hash" not in columns:
+            return "0007"
+        if "size" in columns:
+            return "0006"
     if insp.has_table("user_profiles"):
-        return "0004"
+        user_columns = {column["name"] for column in insp.get_columns("users")}
+        return "0005" if {"password_hash", "dob", "gender"} <= user_columns else "0004"
     if insp.has_table("category_rules"):
         return "0003"
     if insp.has_table("transactions"):
@@ -64,6 +74,7 @@ def _run_alembic_migrations() -> None:
 
     from alembic import command
     from alembic.config import Config
+    from alembic.script import ScriptDirectory
     from sqlalchemy import create_engine, inspect, text
 
     backend_dir = Path(__file__).resolve().parents[2]
@@ -71,18 +82,25 @@ def _run_alembic_migrations() -> None:
     sync_url = _sync_database_url()
     sync_engine = create_engine(sync_url)
     insp = inspect(sync_engine)
+    head = ScriptDirectory.from_config(cfg).get_current_head()
+    current: str | None = None
 
-    with sync_engine.connect() as conn:
-        if insp.has_table("alembic_version"):
-            row = conn.execute(text("SELECT version_num FROM alembic_version")).fetchone()
-            if row and row[0]:
-                command.upgrade(cfg, "head")
-                return
+    try:
+        with sync_engine.connect() as conn:
+            if insp.has_table("alembic_version"):
+                row = conn.execute(text("SELECT version_num FROM alembic_version")).fetchone()
+                if row and row[0]:
+                    current = str(row[0])
+            legacy = None if current else _infer_legacy_revision(insp)
+    finally:
+        # Never invoke Alembic while this inspection connection remains open:
+        # SQLite can otherwise block its second connection during app startup.
+        sync_engine.dispose()
 
-        legacy = _infer_legacy_revision(insp)
-        if legacy:
-            command.stamp(cfg, legacy)
-
+    if current == head:
+        return
+    if not current and legacy:
+        command.stamp(cfg, legacy)
     command.upgrade(cfg, "head")
 
 
