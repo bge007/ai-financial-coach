@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import COOKIE_NAME, SESSION_TTL_SECONDS, create_session_token, get_current_user
+from app.core.auth import COOKIE_NAME, SESSION_TTL_SECONDS, create_session_token, get_current_user, get_or_create_demo_user
 from app.core.config import get_settings
 from app.core.db import get_db
 from app.core.passwords import hash_password, verify_password
@@ -148,6 +148,17 @@ async def callback(request: Request, db: AsyncSession = Depends(get_db)):
     await db.refresh(user)
 
     response = RedirectResponse(url=f"{settings.frontend_url.rstrip('/')}/data")
+    _set_session_cookie(response, user.id)
+    return response
+
+
+@router.post("/demo")
+async def demo_login(db: AsyncSession = Depends(get_db)):
+    """Dev-only: sign in as the fixed demo user when AUTH_DISABLED is enabled."""
+    if not get_settings().auth_disabled:
+        raise HTTPException(status_code=404, detail="Not available")
+    user = await get_or_create_demo_user(db)
+    response = JSONResponse(content=_user_out(user))
     _set_session_cookie(response, user.id)
     return response
 

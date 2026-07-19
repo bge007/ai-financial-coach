@@ -17,6 +17,8 @@ numpy
 scipy
 PyPortfolioOpt
 pdfplumber
+fpdf2
+matplotlib
 openpyxl
 python-multipart
 authlib

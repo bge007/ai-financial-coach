@@ -4,8 +4,6 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -13,7 +11,7 @@ import {
 } from "recharts";
 import { apiGet } from "../api/client.js";
 import { CHART_PALETTE, COLORS } from "../theme.js";
-import { formatINR } from "../utils/format.js";
+import { formatINR, formatMonthLabel } from "../utils/format.js";
 
 export default function Analytics() {
   const [data, setData] = useState(null);
@@ -57,21 +55,24 @@ export default function Analytics() {
   }
 
   const scopeLabel =
-    data.selected_summary?.label ||
-    (month === "all" ? "All months" : month);
+    month === "all" || data.selected_summary?.label === "All months"
+      ? "All months"
+      : formatMonthLabel(data.selected_summary?.label || month);
 
   const mom = (data.month_over_month || []).map((t) => ({
-    month: t.month,
+    month: formatMonthLabel(t.month, { style: "short" }),
     income: Number(t.income),
     expenses: Number(t.expenses),
     highlight: month !== "all" && t.month === month,
   }));
   const cats = Object.entries(data.categories || {})
     .map(([name, value]) => ({
-      name,
+      name: name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
       value: Number(value),
     }))
     .sort((a, b) => b.value - a.value);
+  const catTotal = cats.reduce((sum, c) => sum + c.value, 0);
+  const categoryChartHeight = Math.max(280, cats.length * 38 + 64);
   const summary = data.selected_summary;
 
   return (
@@ -93,7 +94,7 @@ export default function Analytics() {
             <option value="all">All</option>
             {(data.months || []).map((m) => (
               <option key={m} value={m}>
-                {m}
+                {formatMonthLabel(m)}
               </option>
             ))}
           </select>
@@ -133,26 +134,45 @@ export default function Analytics() {
       </section>
 
       <div className="two-col">
-        <section className="card" style={{ height: 320 }}>
+        <section
+          className="card analytics-category-card"
+          style={{ minHeight: categoryChartHeight }}
+        >
           <h3>Categories · {scopeLabel}</h3>
           {cats.length === 0 ? (
             <p className="muted">No debit categories for this selection.</p>
           ) : (
-            <ResponsiveContainer width="100%" height="85%" key={`pie-${month}-${cats.length}`}>
-              <PieChart>
-                <Pie
-                  data={cats}
-                  dataKey="value"
-                  nameKey="name"
-                  outerRadius={90}
-                  label={({ name }) => name}
-                >
+            <ResponsiveContainer width="100%" height={categoryChartHeight - 56} key={`cats-${month}-${cats.length}`}>
+              <BarChart
+                data={cats}
+                layout="vertical"
+                margin={{ top: 4, right: 16, left: 4, bottom: 4 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis
+                  type="number"
+                  tickFormatter={(v) => formatINR(v)}
+                  fontSize={11}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={96}
+                  tick={{ fontSize: 12 }}
+                  interval={0}
+                />
+                <Tooltip
+                  formatter={(v) => {
+                    const pct = catTotal > 0 ? ((Number(v) / catTotal) * 100).toFixed(1) : "0";
+                    return `${formatINR(v)} (${pct}% of spend)`;
+                  }}
+                />
+                <Bar dataKey="value" name="Spend" radius={[0, 6, 6, 0]} barSize={18}>
                   {cats.map((_, i) => (
                     <Cell key={i} fill={CHART_PALETTE[i % CHART_PALETTE.length]} />
                   ))}
-                </Pie>
-                <Tooltip formatter={(v) => formatINR(v)} />
-              </PieChart>
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           )}
         </section>

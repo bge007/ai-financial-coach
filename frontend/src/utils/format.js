@@ -11,3 +11,15 @@ export function formatINR(value, { fixed = false } = {}) {
   }).format(num);
   return `₹${formatted}`;
 }
+
+/** Turn YYYY-MM into a readable label, e.g. "April 2025" or "Apr 2025". */
+export function formatMonthLabel(monthKey, { style = "long" } = {}) {
+  if (!monthKey || monthKey === "all") return "All months";
+  const match = /^(\d{4})-(\d{2})$/.exec(String(monthKey).trim());
+  if (!match) return monthKey;
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, 1);
+  return new Intl.DateTimeFormat("en-IN", {
+    month: style === "short" ? "short" : "long",
+    year: "numeric",
+  }).format(date);
+}

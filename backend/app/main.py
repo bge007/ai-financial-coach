@@ -10,6 +10,8 @@ from app.api.dashboard import router as dashboard_router
 from app.api.privacy import router as privacy_router
 from app.api.profile import router as profile_router
 from app.api.transactions import router as transactions_router
+from app.api.premium import router as premium_router
+from app.api.report import router as report_router
 from app.api.upload import router as upload_router
 from app.core.config import get_settings
 from app.core.db import init_db
@@ -17,6 +19,7 @@ from app.core.db import init_db
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    get_settings.cache_clear()
     await init_db()
     yield
 
@@ -43,6 +46,8 @@ app.include_router(profile_router)
 app.include_router(transactions_router)
 app.include_router(ask_router)
 app.include_router(dashboard_router)
+app.include_router(report_router)
+app.include_router(premium_router)
 app.include_router(privacy_router)
 
 

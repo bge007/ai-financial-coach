@@ -50,16 +50,15 @@ async def get_or_create_demo_user(db: AsyncSession) -> User:
 async def get_current_user(
     request: Request, db: AsyncSession = Depends(get_db)
 ) -> User:
+    token = request.cookies.get(COOKIE_NAME)
+    if token:
+        user_id = decode_session_token(token)
+        if user_id is not None:
+            user = await db.get(User, user_id)
+            if user is not None:
+                return user
+
     if get_settings().auth_disabled:
         return await get_or_create_demo_user(db)
 
-    token = request.cookies.get(COOKIE_NAME)
-    if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    user_id = decode_session_token(token)
-    if user_id is None:
-        raise HTTPException(status_code=401, detail="Invalid or expired session")
-    user = await db.get(User, user_id)
-    if user is None:
-        raise HTTPException(status_code=401, detail="Unknown user")
-    return user
+    raise HTTPException(status_code=401, detail="Not authenticated")

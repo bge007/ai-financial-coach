@@ -1,5 +1,6 @@
 from app.models.category_cache import CategoryCache
 from app.models.category_rule import CategoryRule
+from app.models.consultation_booking import ConsultationBooking
 from app.models.enums import Category, Direction
 from app.models.financial_profile import FinancialProfile
 from app.models.transaction import Transaction
@@ -15,6 +16,7 @@ __all__ = [
     "FinancialProfile",
     "CategoryRule",
     "CategoryCache",
+    "ConsultationBooking",
     "Category",
     "Direction",
 ]

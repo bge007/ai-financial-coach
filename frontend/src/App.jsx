@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import Login from "./pages/Login.jsx";
+import Landing from "./pages/Landing.jsx";
 import Shell from "./components/Shell.jsx";
 import DataProfile from "./pages/DataProfile.jsx";
 import Transactions from "./pages/Transactions.jsx";
@@ -11,17 +11,26 @@ import InvestmentAdvisor from "./pages/InvestmentAdvisor.jsx";
 import PortfolioOptimizer from "./pages/PortfolioOptimizer.jsx";
 import TaxRetirement from "./pages/TaxRetirement.jsx";
 import Coach from "./pages/Coach.jsx";
+import MyMoneyMitra from "./pages/MyMoneyMitra.jsx";
 
 export const NAV_ITEMS = [
-  { path: "/", label: "Dashboard", element: "dashboard" },
-  { path: "/data", label: "Data & Profile", element: "data" },
-  { path: "/transactions", label: "Transactions", element: "transactions" },
-  { path: "/analytics", label: "Analytics", element: "analytics" },
-  { path: "/budget", label: "Budget Advisor", element: "budget" },
-  { path: "/investment", label: "Investment Advisor", element: "investment" },
-  { path: "/portfolio", label: "Portfolio Optimizer", element: "portfolio" },
-  { path: "/tax", label: "Tax & Retirement", element: "tax" },
-  { path: "/coach", label: "Ask the Coach", element: "coach" },
+  { path: "/", label: "Dashboard", element: "dashboard", icon: "dashboard" },
+  { path: "/data", label: "Data & Profile", element: "data", icon: "data" },
+  { path: "/transactions", label: "Transactions", element: "transactions", icon: "transactions" },
+  { path: "/analytics", label: "Analytics", element: "analytics", icon: "analytics" },
+  { path: "/budget", label: "Budget Advisor", element: "budget", icon: "budget" },
+  { path: "/investment", label: "Investment Advisor", element: "investment", icon: "investment" },
+  { path: "/portfolio", label: "Portfolio Optimizer", element: "portfolio", icon: "portfolio" },
+  { path: "/tax", label: "Tax & Retirement", element: "tax", icon: "tax" },
+  { path: "/coach", label: "Ask the Coach", element: "coach", icon: "coach" },
+  {
+    path: "/premium",
+    label: "My Money Mitra",
+    sublabel: "Premium services",
+    element: "premium",
+    premium: true,
+    icon: "premium",
+  },
 ];
 
 const PAGES = {
@@ -34,6 +43,7 @@ const PAGES = {
   portfolio: <PortfolioOptimizer />,
   tax: <TaxRetirement />,
   coach: <Coach />,
+  premium: <MyMoneyMitra />,
 };
 
 function AuthenticatedApp({ user }) {
@@ -76,13 +86,41 @@ export default function App() {
     setUser(userBody);
   }
 
+  async function handleLogout() {
+    await fetch("/auth/logout", { method: "POST", credentials: "include" });
+    setUser(null);
+  }
+
   if (loading) {
     return <div className="center-screen loading-screen">MoneyMitra…</div>;
   }
 
-  if (!user) {
-    return <Login onAuthenticated={handleAuthenticated} />;
-  }
-
-  return <AuthenticatedApp user={user} />;
+  return (
+    <Routes>
+      <Route
+        path="/welcome"
+        element={
+          <Landing
+            user={user}
+            onAuthenticated={handleAuthenticated}
+            onLogout={handleLogout}
+          />
+        }
+      />
+      {user ? (
+        <Route path="/*" element={<AuthenticatedApp user={user} />} />
+      ) : (
+        <Route
+          path="/*"
+          element={
+            <Landing
+              user={null}
+              onAuthenticated={handleAuthenticated}
+              onLogout={handleLogout}
+            />
+          }
+        />
+      )}
+    </Routes>
+  );
 }

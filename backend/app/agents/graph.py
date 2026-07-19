@@ -10,7 +10,8 @@ from langgraph.graph import END, StateGraph
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.guardrails import _canon_amount, _expand_allowed, _normalize_amount, apply_guardrail
-from app.agents.llm import AgentOutput, LLMFn, call_agent_llm
+from app.agents.llm import AgentOutput, LLMFn, call_agent_llm, get_last_llm_error
+from app.agents.offline import build_offline_output
 from app.agents.router import route_query
 from app.agents import tools
 from app.engines.budget import fifty_thirty_twenty
@@ -317,6 +318,9 @@ def _figures_from_ctx(ctx: dict[str, Any]) -> list[str]:
     return out
 
 
+_LLM_UNAVAILABLE = "I could not reach the language model"
+
+
 async def run_agents(
     db: AsyncSession,
     user_id: int,
@@ -332,6 +336,7 @@ async def run_agents(
     fy = load_tax_config()["financial_year"]
 
     agent_outputs: dict[str, dict[str, Any]] = {}
+    llm_warning: str | None = None
     for agent in routes:
         system = (
             f"You are the {agent} for an Indian personal finance coach (MoneyMitra). "
@@ -361,6 +366,18 @@ async def run_agents(
             f"Allowed figures_used candidates: {figures[:80]}"
         )
         out = await call_agent_llm(system, user_msg, llm=llm)
+        llm_failed = _LLM_UNAVAILABLE in out.summary
+        if llm_failed:
+            if llm_warning is None:
+                llm_warning = get_last_llm_error() or (
+                    "Language model unavailable — showing answers computed from your statement data."
+                )
+            offline = build_offline_output(agent, ctx)
+            out = AgentOutput(
+                summary=offline.summary,
+                recommendations=offline.recommendations,
+                figures_used=offline.figures_used or [],
+            )
         # Prefer LLM figures_used when present; always fall back to engine figures.
         allowed_set = _expand_allowed(figures)
         used = [
@@ -406,6 +423,7 @@ async def run_agents(
         "rag_chunks": rag,
         "agent_outputs": agent_outputs,
         "answer": guarded,
+        "llm_warning": llm_warning,
     }
 
 
